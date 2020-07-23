@@ -7,8 +7,9 @@ public class RedisCacheFlusherTest {
 
     public void testSetString() {
         long expire = 1000;
-        CacheOperator flusher = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator();
 
-        flusher.loadString("key", expire, () -> "value");
+        String value = cacheOperator.loadString("key", expire, () -> "value");
+        System.out.println(value);
     }
 }

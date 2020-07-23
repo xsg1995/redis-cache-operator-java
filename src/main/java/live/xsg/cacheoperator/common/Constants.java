@@ -8,4 +8,7 @@ public class Constants {
 
     //空字符串
     public static String EMPTY_STRING = "";
+
+    //设置正在刷新缓存标识前置
+    public static String LOADING_KEY = "r_o_loading_key_";
 }
