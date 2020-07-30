@@ -7,7 +7,8 @@ import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 
@@ -17,13 +18,13 @@ import static org.testng.Assert.assertEquals;
 @Test
 public class RedisCacheFlusherTest {
 
-    public void loadString_with_map_test() throws InterruptedException {
+    public void getString_with_map_test() throws InterruptedException {
         Transporter transporter = new MapTransporter();
         CacheOperator cacheOperator = new RedisCacheOperator(transporter);
         String key = "key1";
         String value = "value1";
         long expire = 2000;
-        String val = cacheOperator.loadString(key, expire, () -> {
+        String val = cacheOperator.getString(key, expire, () -> {
             System.out.println("加载数据...");
             return value;
         });
@@ -32,9 +33,35 @@ public class RedisCacheFlusherTest {
         sleep(2);
 
         List<Thread> list = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 100; i++) {
             list.add(new Thread(() -> {
-                String res = cacheOperator.loadString(key, expire, () -> {
+                String res = cacheOperator.getString(key, expire, () -> {
+                    System.out.println("加载数据...");
+                    return value;
+                });
+                System.out.println(res);
+            }));
+        }
+
+        for (Thread thread : list) {
+            thread.start();
+        }
+        for (Thread thread : list) {
+            thread.join();
+        }
+    }
+
+    public void getStringAsync_with_map_test() throws InterruptedException {
+        Transporter transporter = new MapTransporter();
+        CacheOperator cacheOperator = new RedisCacheOperator(transporter);
+        String key = "key1";
+        String value = "value1";
+        long expire = 2000;
+
+        List<Thread> list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            list.add(new Thread(() -> {
+                String res = cacheOperator.getStringAsync(key, expire, () -> {
                     System.out.println("加载数据...");
                     return value;
                 });
@@ -49,12 +76,48 @@ public class RedisCacheFlusherTest {
             thread.join();
         }
 
-        sleep(2);
-        String res = cacheOperator.loadString(key, expire, () -> {
-            System.out.println("加载数据...");
-            return value;
-        });
+        sleep(1);
+        String val = cacheOperator.getString(key);
+        assertEquals(val, value);
+    }
 
+    public void getStringAsync_with_executor_map_test() throws InterruptedException {
+        Executor executor = new ThreadPoolExecutor(3, 3,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(1),
+                new ThreadPoolExecutor.DiscardPolicy() {
+                    @Override
+                    public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+                        System.out.println("reject");
+                    }
+                });
+        Transporter transporter = new MapTransporter();
+        CacheOperator cacheOperator = new RedisCacheOperator(transporter);
+        String key = "key1";
+        String value = "value1";
+        long expire = 2000;
+
+        AtomicInteger count = new AtomicInteger();
+
+        List<Thread> list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            list.add(new Thread(() -> {
+                String res = cacheOperator.getStringAsync(key, expire, () -> {
+                    System.out.println("加载数据...");
+                    return value;
+                }, executor);
+            }));
+        }
+
+        for (Thread thread : list) {
+            thread.start();
+        }
+        for (Thread thread : list) {
+            thread.join();
+        }
+
+        sleep(1);
+        String val = cacheOperator.getString(key);
         assertEquals(val, value);
     }
 

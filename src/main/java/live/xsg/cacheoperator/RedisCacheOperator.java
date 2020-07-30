@@ -2,10 +2,15 @@ package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
+import live.xsg.cacheoperator.executor.CacheExecutor;
+import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.concurrent.Executor;
 
 /**
  * redis缓存操作器
@@ -30,12 +35,26 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
     }
 
     @Override
-    public String loadString(String key, long expire, Refresher<String> flusher) {
+    public String getString(String key, long expire, Refresher<String> flusher) {
+        return this.getString(key, expire, flusher, new SyncCacheExecutor());
+    }
+
+    @Override
+    public String getStringAsync(String key, long expire, Refresher<String> flusher) {
+        return this.getString(key, expire, flusher, this.asyncCacheExecutor);
+    }
+
+    @Override
+    public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
+        return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor));
+    }
+
+    private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor cacheExecutor) {
         String res = this.transporter.get(key);
 
         if (StringUtils.isBlank(res)) {
             //缓存中不存在数据，获取数据，放入缓存
-            res = this.doFillStringCache(key, expire, flusher);
+            res = (String) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
         } else {
             //缓存中存在数据，判断缓存是否已经过期
             StringCodec.StringData stringData = this.getDecodeStringData(res);
@@ -43,7 +62,7 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
 
             if (invalid) {
                 //缓存过期，刷新缓存
-                res = this.doFillStringCache(key, expire, flusher);
+                res = (String) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
                 //如果有其他线程在刷新缓存，则返回现在缓存中的值
                 if (Constants.EMPTY_STRING.equals(res)) {
                     res = stringData.getData();

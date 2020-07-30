@@ -3,6 +3,8 @@ package live.xsg.cacheoperator;
 import live.xsg.cacheoperator.codec.Codec;
 import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
+import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +22,8 @@ public abstract class AbstractCacheOperator implements CacheOperator {
     protected Transporter transporter;
     //String类型编解码
     protected Codec stringCodec = new StringCodec();
+    //异步任务执行器
+    protected CacheExecutor asyncCacheExecutor = new AsyncCacheExecutor();
 
     public AbstractCacheOperator(Transporter transporter, long loadingKeyExpire) {
         this.transporter = transporter;
@@ -38,13 +42,24 @@ public abstract class AbstractCacheOperator implements CacheOperator {
         try {
             //设置正在加载key对应的数据
             isLoading = this.isLoading(key);
-
             //isLoading=true，则已有其他线程在刷新数据
             if (isLoading) {
                 return Constants.EMPTY_STRING;
             }
 
+            //检查是否已经有其他线程刷新完缓存
+            String res = this.transporter.get(key);
+            if (StringUtils.isNotBlank(res)) {
+                StringCodec.StringData stringData = this.getDecodeStringData(res);
+                boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
+                if (!invalid) {
+                    //没有过期，已有其他线程刷新了缓存，返回缓存数据
+                    return stringData.getData();
+                }
+            }
+
             String data = flusher.refresh();
+
             if (StringUtils.isBlank(data)) {
                 data = Constants.EMPTY_STRING;
             }

@@ -61,6 +61,14 @@ public class StringCodec implements Codec {
         public void setData(String data) {
             this.data = data;
         }
+
+        @Override
+        public String toString() {
+            return "StringData{" +
+                    "absoluteExpireTime=" + absoluteExpireTime +
+                    ", data='" + data + '\'' +
+                    '}';
+        }
     }
 
     public static void main(String[] args) {
