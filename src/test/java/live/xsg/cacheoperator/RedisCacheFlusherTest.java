@@ -77,8 +77,25 @@ public class RedisCacheFlusherTest {
         }
 
         sleep(1);
-        String val = cacheOperator.getString(key);
-        assertEquals(val, value);
+
+
+        list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            list.add(new Thread(() -> {
+                String res = cacheOperator.getStringAsync(key, expire, () -> {
+                    System.out.println("加载数据...");
+                    return value;
+                });
+                System.out.println(res);
+            }));
+        }
+
+        for (Thread thread : list) {
+            thread.start();
+        }
+        for (Thread thread : list) {
+            thread.join();
+        }
     }
 
     public void getStringAsync_with_executor_map_test() throws InterruptedException {
@@ -97,8 +114,6 @@ public class RedisCacheFlusherTest {
         String value = "value1";
         long expire = 2000;
 
-        AtomicInteger count = new AtomicInteger();
-
         List<Thread> list = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             list.add(new Thread(() -> {
@@ -116,9 +131,6 @@ public class RedisCacheFlusherTest {
             thread.join();
         }
 
-        sleep(1);
-        String val = cacheOperator.getString(key);
-        assertEquals(val, value);
     }
 
     public void getString_test() {

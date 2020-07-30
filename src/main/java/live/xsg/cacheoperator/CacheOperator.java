@@ -5,7 +5,7 @@ import live.xsg.cacheoperator.flusher.Refresher;
 import java.util.concurrent.Executor;
 
 /**
- * 缓存刷新器
+ * 缓存操作器
  * Created by xsg on 2020/7/20.
  */
 public interface CacheOperator {
