@@ -16,7 +16,7 @@ public class Constants {
     public static int RESULT_SUCCESS = 1;
 
     //服务端返回 2
-    public static int RESULT_FAILURE = 2;
+    public static int RESULT_FAILURE = 0;
 
     //缓存最大过期时间常量，用于标识作用
     public static long ABSOLUTE_EXPIRE_TIME = -1L;

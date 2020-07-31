@@ -9,15 +9,22 @@ import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * 缓存操作类的抽象类，将通用方法抽取到这里
  * Created by xsg on 2020/7/26.
  */
 public abstract class AbstractCacheOperator implements CacheOperator {
     //默认刷新缓存的最大时间，2分钟，单位：ms
-    protected static final long DEFAULT_LOADING_KEY_EXPIRE = 2 * 2 * 1000L;
+    protected static final long DEFAULT_LOADING_KEY_EXPIRE = 2 * 60 * 1000L;
+    //默认延长时间，5分钟
+    protected static final long DEFAULT_EXTEND_EXPIRE = 5 * 60 * 1000L;
     //刷新缓存的最大时间
     protected long loadingKeyExpire;
+    //过期时间的延长时间
+    protected long extendExpire = DEFAULT_EXTEND_EXPIRE;
     //服务器交互接口 RedisTransporter
     protected Transporter transporter;
     //String类型编解码
@@ -63,7 +70,8 @@ public abstract class AbstractCacheOperator implements CacheOperator {
             if (StringUtils.isBlank(data)) {
                 data = Constants.EMPTY_STRING;
             }
-            this.transporter.set(key, expire, (String) this.stringCodec.encode(expire, data));
+            long newExpire = this.getExtendExpire(expire);
+            this.transporter.set(key, newExpire, (String) this.stringCodec.encode(expire, data));
             return data;
         } finally {
             if (!isLoading) {
@@ -71,6 +79,16 @@ public abstract class AbstractCacheOperator implements CacheOperator {
                 this.loadFinish(key);
             }
         }
+    }
+
+    /**
+     * 延长时间过期时间
+     * @param expire 原来的过期时间
+     * @return 延长后的过期时间
+     */
+    private long getExtendExpire(long expire) {
+//        return expire + DEFAULT_EXTEND_EXPIRE;
+        return expire;
     }
 
     /**

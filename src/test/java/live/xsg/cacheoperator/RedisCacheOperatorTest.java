@@ -28,7 +28,7 @@ public class RedisCacheOperatorTest {
         sleep(2);
 
         List<Thread> list = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             list.add(new Thread(() -> {
                 String res = cacheOperator.getString(key, expire, () -> {
                     System.out.println("加载数据...");
@@ -80,6 +80,51 @@ public class RedisCacheOperatorTest {
                     System.out.println("加载数据...");
                     return value;
                 });
+                System.out.println(res);
+            }));
+        }
+
+        for (Thread thread : list) {
+            thread.start();
+        }
+        for (Thread thread : list) {
+            thread.join();
+        }
+    }
+
+    public void getStringAsync_default_test() throws InterruptedException {
+        CacheOperator cacheOperator = new RedisCacheOperator();
+        String key = "key1";
+        String value = "value1";
+        long expire = 2000;
+
+        List<Thread> list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            list.add(new Thread(() -> {
+                String res = cacheOperator.getStringAsync(key, expire, () -> {
+                    System.out.println("加载数据...");
+                    return value;
+                }, "defaultVal");
+                System.out.println(res);
+            }));
+        }
+
+        for (Thread thread : list) {
+            thread.start();
+        }
+        for (Thread thread : list) {
+            thread.join();
+        }
+
+        sleep(1);
+
+        list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            list.add(new Thread(() -> {
+                String res = cacheOperator.getStringAsync(key, expire, () -> {
+                    System.out.println("加载数据...");
+                    return value;
+                }, "defaultVal");
                 System.out.println(res);
             }));
         }

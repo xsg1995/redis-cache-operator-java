@@ -36,20 +36,35 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
 
     @Override
     public String getString(String key, long expire, Refresher<String> flusher) {
-        return this.getString(key, expire, flusher, new SyncCacheExecutor());
+        return this.getString(key, expire, flusher, new SyncCacheExecutor(), null);
+    }
+
+    @Override
+    public String getString(String key, long expire, Refresher<String> flusher, String defaultVal) {
+        return this.getString(key, expire, flusher, new SyncCacheExecutor(), defaultVal);
     }
 
     @Override
     public String getStringAsync(String key, long expire, Refresher<String> flusher) {
-        return this.getString(key, expire, flusher, this.asyncCacheExecutor);
+        return this.getString(key, expire, flusher, this.asyncCacheExecutor, null);
+    }
+
+    @Override
+    public String getStringAsync(String key, long expire, Refresher<String> flusher, String defaultVal) {
+        return this.getString(key, expire, flusher, this.asyncCacheExecutor, defaultVal);
     }
 
     @Override
     public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
-        return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor));
+        return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor), null);
     }
 
-    private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor cacheExecutor) {
+    @Override
+    public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor, String defaultVal) {
+        return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor), defaultVal);
+    }
+
+    private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor cacheExecutor, String defaultVal) {
         String res = this.transporter.get(key);
 
         if (StringUtils.isBlank(res)) {
@@ -73,6 +88,10 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
             }
         }
 
+        //如果返回值为空且设置了默认值，返回默认值
+        if (StringUtils.isEmpty(res) && defaultVal != null) {
+            res = defaultVal;
+        }
         return res;
     }
 
