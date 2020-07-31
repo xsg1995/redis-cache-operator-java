@@ -8,7 +8,6 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 
@@ -16,7 +15,7 @@ import static org.testng.Assert.assertEquals;
  * Created by xsg on 2020/7/20.
  */
 @Test
-public class RedisCacheFlusherTest {
+public class RedisCacheOperatorWithMapTest {
 
     public void getString_with_map_test() throws InterruptedException {
         Transporter transporter = new MapTransporter();
@@ -133,7 +132,7 @@ public class RedisCacheFlusherTest {
 
     }
 
-    public void getString_test() {
+    public void getString_with_test() {
         Transporter transporter = new MapTransporter();
         CacheOperator cacheOperator = new RedisCacheOperator(transporter);
         String key = "key";
