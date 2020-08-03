@@ -5,12 +5,13 @@ import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
+import live.xsg.cacheoperator.filter.Filter;
+import live.xsg.cacheoperator.filter.FilterChainBuilder;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
 
 /**
  * 缓存操作类的抽象类，将通用方法抽取到这里
@@ -31,10 +32,21 @@ public abstract class AbstractCacheOperator implements CacheOperator {
     protected Codec stringCodec = new StringCodec();
     //异步任务执行器
     protected CacheExecutor asyncCacheExecutor = new AsyncCacheExecutor();
+    //过滤器链
+    protected List<Filter> filters;
 
     public AbstractCacheOperator(Transporter transporter, long loadingKeyExpire) {
         this.transporter = transporter;
         this.loadingKeyExpire = loadingKeyExpire;
+
+        this.buildFilter();
+    }
+
+    /**
+     * 创建过滤器链
+     */
+    private void buildFilter() {
+        this.filters = FilterChainBuilder.build();
     }
 
     /**
@@ -70,8 +82,10 @@ public abstract class AbstractCacheOperator implements CacheOperator {
             if (StringUtils.isBlank(data)) {
                 data = Constants.EMPTY_STRING;
             }
+
             long newExpire = this.getExtendExpire(expire);
             this.transporter.set(key, newExpire, (String) this.stringCodec.encode(expire, data));
+
             return data;
         } finally {
             if (!isLoading) {
@@ -87,8 +101,7 @@ public abstract class AbstractCacheOperator implements CacheOperator {
      * @return 延长后的过期时间
      */
     private long getExtendExpire(long expire) {
-//        return expire + DEFAULT_EXTEND_EXPIRE;
-        return expire;
+        return expire + this.extendExpire;
     }
 
     /**
@@ -129,5 +142,43 @@ public abstract class AbstractCacheOperator implements CacheOperator {
      */
     protected StringCodec.StringData getDecodeStringData(String data) {
         return (StringCodec.StringData) this.stringCodec.decode(data);
+    }
+
+    /**
+     * 添加过滤器
+     * @param filter 过滤器
+     */
+    protected void addFilter(Filter filter) {
+        this.filters.add(filter);
+    }
+
+    /**
+     * 调用所有过滤器链的前置处理
+     * @param key key
+     * @return true，继续执行后续逻辑；false，不执行后续逻辑
+     */
+    protected boolean preFilter(String key) {
+        for (Filter filter : filters) {
+            if (!filter.preFilter(key)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 调用所有过滤器的后置处理
+     * @param key key
+     * @param result 返回结果
+     */
+    protected void postFilter(String key, Object result) {
+        for (Filter filter : filters) {
+            try {
+                filter.postFilter(key, result);
+            } catch (Exception e) {
+                //失败不影响后续逻辑
+                e.printStackTrace();
+            }
+        }
     }
 }
