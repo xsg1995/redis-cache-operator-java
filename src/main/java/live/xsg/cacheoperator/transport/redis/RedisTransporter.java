@@ -57,6 +57,11 @@ public class RedisTransporter implements Transporter {
         execute(jedis -> jedis.del(key));
     }
 
+    @Override
+    public void incr(String key) {
+        this.execute(jedis -> jedis.incr(key));
+    }
+
     private <T> T execute(JedisExecutor<T> executor) {
         T res = null;
         try (Jedis jedis = this.jedisPool.getResource()) {

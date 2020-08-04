@@ -1,6 +1,8 @@
 package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.filter.Filter;
+import live.xsg.cacheoperator.filter.FilterChainBuilder;
 import live.xsg.cacheoperator.transport.MapTransporter;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.testng.annotations.Test;
@@ -143,6 +145,29 @@ public class RedisCacheOperatorWithMapTest {
         transporter.set(key, 0L, val);
         value = cacheOperator.getString(key);
         assertEquals(value, val);
+    }
+
+    public void filter_test() {
+        FilterChainBuilder instance = FilterChainBuilder.getInstance();
+        instance.addFilter(new Filter() {
+            @Override
+            public boolean preFilter(String key) {
+                return "can_access".equals(key);
+            }
+
+            @Override
+            public void postFilter(String key, Object result) {
+                System.out.println("自定义filter:" + key + "---->" + result);
+            }
+        });
+
+        Transporter transporter = new MapTransporter();
+        CacheOperator cacheOperator = new RedisCacheOperator(transporter);
+        String key = "key";
+        String canAccess = "can_access";
+
+        System.out.println(cacheOperator.getString(key));
+        System.out.println(cacheOperator.getString(canAccess));
     }
 
     //线程睡眠

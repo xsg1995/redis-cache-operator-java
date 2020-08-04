@@ -32,6 +32,8 @@ public abstract class AbstractCacheOperator implements CacheOperator {
     protected Codec stringCodec = new StringCodec();
     //异步任务执行器
     protected CacheExecutor asyncCacheExecutor = new AsyncCacheExecutor();
+    //过滤器链构造器
+    private FilterChainBuilder filterChainBuilder = FilterChainBuilder.getInstance();
     //过滤器链
     protected List<Filter> filters;
 
@@ -46,7 +48,7 @@ public abstract class AbstractCacheOperator implements CacheOperator {
      * 创建过滤器链
      */
     private void buildFilter() {
-        this.filters = FilterChainBuilder.build();
+        this.filters = this.filterChainBuilder.build();
     }
 
     /**

@@ -5,6 +5,7 @@ import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
+import live.xsg.cacheoperator.filter.FilterChainBuilder;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
@@ -121,6 +122,8 @@ public class RedisCacheOperator implements CacheOperator {
             String key = (String) args[0];
             //过滤器链前置处理
             if (!this.preFilter(key)) {
+                //过滤器链后置处理
+                this.postFilter(key, null);
                 return null;
             }
 

@@ -35,4 +35,10 @@ public interface Transporter {
      * @param key key
      */
     void del(String key);
+
+    /**
+     * 累加
+     * @param key key
+     */
+    void incr(String key);
 }

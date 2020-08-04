@@ -37,4 +37,10 @@ public class MapTransporter implements Transporter {
     public synchronized void del(String key) {
         this.cache.remove(key);
     }
+
+    @Override
+    public synchronized void incr(String key) {
+        this.cache.putIfAbsent(key, 1);
+        this.cache.put(key, (Integer) this.cache.get(key) + 1);
+    }
 }
