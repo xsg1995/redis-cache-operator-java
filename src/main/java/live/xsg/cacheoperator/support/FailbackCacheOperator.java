@@ -3,13 +3,17 @@ package live.xsg.cacheoperator.support;
 import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.exception.RetryRecoverException;
+import live.xsg.cacheoperator.mock.MockRegister;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
-import redis.clients.jedis.exceptions.JedisException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.concurrent.*;
+import java.util.Iterator;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,10 +36,11 @@ public class FailbackCacheOperator {
     private AtomicInteger currRetryTime = new AtomicInteger();
     //定时检测redis是否恢复
     private ScheduledExecutorService checkExecutor = Executors.newScheduledThreadPool(1);
-    //
     private ScheduledFuture<?> checkFuture;
     //redis底层连接
     private Transporter transporter;
+    //mock降级实现类
+    private MockRegister mockRegister = MockRegister.getInstance();
 
     public FailbackCacheOperator(CacheOperator cacheOperator) {
         this.cacheOperator = cacheOperator;
@@ -45,7 +50,7 @@ public class FailbackCacheOperator {
     public Object invoke(Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
         if (this.block.get()) {
             //中断后，走降级逻辑
-            return doMock();
+            return doMock(method, args);
         }
 
         while (this.currRetryTime.get() < this.retryTime) {
@@ -62,7 +67,7 @@ public class FailbackCacheOperator {
 
         this.block.set(true);
         this.addScheduleCheckRecover();
-        return doMock();
+        return doMock(method, args);
     }
 
     /**
@@ -126,7 +131,17 @@ public class FailbackCacheOperator {
      * redis失败后走降级逻辑=
      * @return 返回降级逻辑的结果
      */
-    private Object doMock() {
-        return "mockData";
+    private Object doMock(Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        //获取mock列表
+        Iterator<CacheOperator> mockCacheOperators = this.mockRegister.getMockCacheOperators();
+        while (mockCacheOperators.hasNext()) {
+            CacheOperator mock = mockCacheOperators.next();
+            //执行mock逻辑
+            Object result = method.invoke(mock, args);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
     }
 }

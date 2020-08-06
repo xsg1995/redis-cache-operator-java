@@ -1,5 +1,8 @@
 package live.xsg.cacheoperator;
 
+import live.xsg.cacheoperator.flusher.Refresher;
+import live.xsg.cacheoperator.mock.AbstractMockCacheOperator;
+import live.xsg.cacheoperator.mock.MockRegister;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -132,6 +135,23 @@ public class RedisCacheOperatorTest {
 
         val = cacheOperator.getString(key, expire, () -> value);
         System.out.println("failback_retry_test_return3:" + val);
+    }
+
+    public void failback_retry_with_mock_test() {
+
+        MockRegister.getInstance().register(new AbstractMockCacheOperator() {
+            @Override
+            public String getString(String key, long expire, Refresher<String> flusher) {
+                return "my_mock_data";
+            }
+        });
+
+        RedisCacheOperator cacheOperator = new RedisCacheOperator();
+        String key = "key";
+        String value = "value";
+        long expire = 10 * 1000L;
+        String val = cacheOperator.getString(key, expire, () -> value);
+        System.out.println(val);
     }
 
     //线程睡眠
