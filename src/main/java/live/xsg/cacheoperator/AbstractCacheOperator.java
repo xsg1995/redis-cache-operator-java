@@ -8,6 +8,7 @@ import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.filter.Filter;
 import live.xsg.cacheoperator.filter.FilterChainBuilder;
 import live.xsg.cacheoperator.flusher.Refresher;
+import live.xsg.cacheoperator.support.FailbackCacheOperator;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,6 +37,8 @@ public abstract class AbstractCacheOperator implements CacheOperator {
     private FilterChainBuilder filterChainBuilder = FilterChainBuilder.getInstance();
     //过滤器链
     protected List<Filter> filters;
+    //失败降级策略
+    protected FailbackCacheOperator failbackCacheOperator = new FailbackCacheOperator(this);
 
     public AbstractCacheOperator(Transporter transporter, long loadingKeyExpire) {
         this.transporter = transporter;

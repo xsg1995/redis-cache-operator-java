@@ -127,7 +127,7 @@ public class RedisCacheOperator implements CacheOperator {
                 return null;
             }
 
-            Object result = method.invoke(this, args);
+            Object result = this.failbackCacheOperator.invoke(method, args);
 
             //过滤器链后置处理
             this.postFilter(key, result);

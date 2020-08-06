@@ -19,7 +19,7 @@ public interface Transporter {
      * @param expire 过期时间，单位: ms
      * @param value value
      */
-    void set(String key, long expire, String value);
+    String set(String key, long expire, String value);
 
     /**
      * 设置key对应的value，如果key不存在则设置，否则不设置
@@ -41,4 +41,5 @@ public interface Transporter {
      * @param key key
      */
     void incr(String key);
+
 }

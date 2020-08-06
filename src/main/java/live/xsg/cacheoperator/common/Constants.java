@@ -20,4 +20,7 @@ public class Constants {
 
     //缓存最大过期时间常量，用于标识作用
     public static long ABSOLUTE_EXPIRE_TIME = -1L;
+
+    //返回ok
+    public static String OK = "OK";
 }

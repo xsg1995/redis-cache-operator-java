@@ -36,8 +36,8 @@ public class RedisTransporter implements Transporter {
     }
 
     @Override
-    public void set(String key, long expire, String value) {
-        execute(jedis -> jedis.psetex(key, expire, value));
+    public String set(String key, long expire, String value) {
+        return execute(jedis -> jedis.psetex(key, expire, value));
     }
 
     @Override

@@ -20,8 +20,9 @@ public class MapTransporter implements Transporter {
     }
 
     @Override
-    public synchronized void set(String key, long expire, String value) {
+    public synchronized String set(String key, long expire, String value) {
         this.cache.put(key, value);
+        return Constants.OK;
     }
 
     @Override
