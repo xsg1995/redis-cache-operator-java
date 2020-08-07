@@ -8,6 +8,8 @@ import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.filter.Filter;
 import live.xsg.cacheoperator.filter.FilterChainBuilder;
 import live.xsg.cacheoperator.flusher.Refresher;
+import live.xsg.cacheoperator.resource.Resource;
+import live.xsg.cacheoperator.resource.ResourceHolder;
 import live.xsg.cacheoperator.support.FailbackCacheOperator;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
@@ -26,7 +28,7 @@ public abstract class AbstractCacheOperator implements CacheOperator {
     //刷新缓存的最大时间
     protected long loadingKeyExpire;
     //过期时间的延长时间
-    protected long extendExpire = DEFAULT_EXTEND_EXPIRE;
+    protected long extendExpire;
     //服务器交互接口 RedisTransporter
     protected Transporter transporter;
     //String类型编解码
@@ -39,10 +41,13 @@ public abstract class AbstractCacheOperator implements CacheOperator {
     protected List<Filter> filters;
     //失败降级策略
     protected FailbackCacheOperator failbackCacheOperator = new FailbackCacheOperator(this);
+    //获取资源数据
+    protected Resource resource = ResourceHolder.getInstance().getResource();
 
-    public AbstractCacheOperator(Transporter transporter, long loadingKeyExpire) {
+    public AbstractCacheOperator(Transporter transporter) {
         this.transporter = transporter;
-        this.loadingKeyExpire = loadingKeyExpire;
+        this.loadingKeyExpire = this.resource.getLong(Constants.LOADING_KEY_EXPIRE, DEFAULT_LOADING_KEY_EXPIRE);
+        this.extendExpire = this.resource.getLong(Constants.EXTEND_EXPIRE, DEFAULT_EXTEND_EXPIRE);
 
         this.buildFilter();
     }

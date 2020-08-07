@@ -4,6 +4,8 @@ import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.exception.RetryRecoverException;
 import live.xsg.cacheoperator.mock.MockRegister;
+import live.xsg.cacheoperator.resource.Resource;
+import live.xsg.cacheoperator.resource.ResourceHolder;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 
@@ -25,13 +27,15 @@ public class FailbackCacheOperator {
 
     private static final int DEFAULT_RETRY_TIME = 5;
     //定时任务运行周期
-    private static final long RETRY_PERIOD = 30 * 1000L;
+    private static final long DEFAULT_RETRY_PERIOD = 30 * 1000L;
 
     private CacheOperator cacheOperator;
     //降级控制开关
     private AtomicBoolean block = new AtomicBoolean();
     //失败重试次数
-    private int retryTime = DEFAULT_RETRY_TIME;
+    private int retryTime;
+    //redis重试频率
+    private long retryPeriod;
     //当前失败重试次数
     private AtomicInteger currRetryTime = new AtomicInteger();
     //定时检测redis是否恢复
@@ -41,9 +45,13 @@ public class FailbackCacheOperator {
     private Transporter transporter;
     //mock降级实现类
     private MockRegister mockRegister = MockRegister.getInstance();
+    //获取资源数据
+    protected Resource resource = ResourceHolder.getInstance().getResource();
 
     public FailbackCacheOperator(CacheOperator cacheOperator) {
         this.cacheOperator = cacheOperator;
+        this.retryTime = this.resource.getInt(Constants.RETRY_TIME, DEFAULT_RETRY_TIME);
+        this.retryPeriod = this.resource.getLong(Constants.RETRY_PERIOD, DEFAULT_RETRY_PERIOD);
         this.transporter = new RedisTransporter();
     }
 
@@ -81,7 +89,7 @@ public class FailbackCacheOperator {
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
-            }, RETRY_PERIOD, RETRY_PERIOD, TimeUnit.MILLISECONDS);
+            }, retryPeriod, retryPeriod, TimeUnit.MILLISECONDS);
         }
     }
 

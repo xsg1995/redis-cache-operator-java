@@ -23,4 +23,16 @@ public class Constants {
 
     //返回ok
     public static String OK = "OK";
+
+    //加载缓存过期时间key
+    public static String LOADING_KEY_EXPIRE = "loadingKeyExpire";
+
+    //缓存保存时间扩展时间Key
+    public static String EXTEND_EXPIRE = "extendExpire";
+
+    //失败重试次数
+    public static String RETRY_TIME = "retryTime";
+
+    //redis异常重试频率
+    public static String RETRY_PERIOD = "retryPeriod";
 }

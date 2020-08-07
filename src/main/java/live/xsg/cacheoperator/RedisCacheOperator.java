@@ -5,7 +5,6 @@ import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
-import live.xsg.cacheoperator.filter.FilterChainBuilder;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
@@ -28,16 +27,9 @@ public class RedisCacheOperator implements CacheOperator {
         this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator());
     }
 
-    public RedisCacheOperator(long loadingKeyExpire) {
-        this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator(loadingKeyExpire));
-    }
 
     public RedisCacheOperator(Transporter transporter) {
         this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator(transporter));
-    }
-
-    public RedisCacheOperator(Transporter transporter, long loadingKeyExpire) {
-        this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator(transporter, loadingKeyExpire));
     }
 
     /**
@@ -87,19 +79,11 @@ public class RedisCacheOperator implements CacheOperator {
      */
     static class InnerRedisCacheOperator extends AbstractCacheOperator implements CacheOperator, InvocationHandler {
         public InnerRedisCacheOperator() {
-            super(new RedisTransporter(), DEFAULT_LOADING_KEY_EXPIRE);
-        }
-
-        public InnerRedisCacheOperator(long loadingKeyExpire) {
-            super(new RedisTransporter(), loadingKeyExpire);
+            super(new RedisTransporter());
         }
 
         public InnerRedisCacheOperator(Transporter transporter) {
-            super(transporter, DEFAULT_LOADING_KEY_EXPIRE);
-        }
-
-        public InnerRedisCacheOperator(Transporter transporter, long loadingKeyExpire) {
-            super(transporter, loadingKeyExpire);
+            super(transporter);
         }
 
         @Override
