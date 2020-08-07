@@ -1,6 +1,7 @@
 package live.xsg.cacheoperator.mock;
 
 import live.xsg.cacheoperator.CacheOperator;
+import live.xsg.cacheoperator.extension.ExtensionLoader;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -12,6 +13,8 @@ import java.util.List;
  * Created by xsg on 2020/8/6.
  */
 public class MockRegister {
+
+    private ExtensionLoader<Mock> extensionLoader = new ExtensionLoader<>();
     //mock实现类
     private List<CacheOperator> mockCacheOperators = new LinkedList<>();
 
@@ -21,6 +24,15 @@ public class MockRegister {
 
     public static MockRegister getInstance() {
         return MockRegisterHolder.holder;
+    }
+
+    private MockRegister() {
+        List<Mock> extensions = extensionLoader.getExtensions(Mock.class);
+        for (Mock mock : extensions) {
+            if (mock instanceof CacheOperator) {
+                mockCacheOperators.add((CacheOperator) mock);
+            }
+        }
     }
 
     /**

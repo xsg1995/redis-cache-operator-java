@@ -9,7 +9,7 @@ import java.util.concurrent.Executor;
  * mock降级
  * Created by xsg on 2020/8/6.
  */
-public abstract class AbstractMockCacheOperator implements CacheOperator {
+public abstract class AbstractMockCacheOperator implements CacheOperator, Mock {
 
     @Override
     public String getString(String key, long expire, Refresher<String> flusher) {
