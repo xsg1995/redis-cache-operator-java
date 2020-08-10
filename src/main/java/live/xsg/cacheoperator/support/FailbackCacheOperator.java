@@ -5,7 +5,7 @@ import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.exception.RetryRecoverException;
 import live.xsg.cacheoperator.mock.MockRegister;
 import live.xsg.cacheoperator.resource.Resource;
-import live.xsg.cacheoperator.resource.ResourceHolder;
+import live.xsg.cacheoperator.resource.ResourceRegister;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 
@@ -46,12 +46,17 @@ public class FailbackCacheOperator {
     //mock降级实现类
     private MockRegister mockRegister = MockRegister.getInstance();
     //获取资源数据
-    protected Resource resource = ResourceHolder.getInstance().getResource();
+    protected Resource resource;
 
     public FailbackCacheOperator(CacheOperator cacheOperator) {
         this.cacheOperator = cacheOperator;
-        this.retryTime = this.resource.getInt(Constants.RETRY_TIME, DEFAULT_RETRY_TIME);
-        this.retryPeriod = this.resource.getLong(Constants.RETRY_PERIOD, DEFAULT_RETRY_PERIOD);
+
+        if (cacheOperator instanceof ResourceRegister) {
+            this.resource = ((ResourceRegister) cacheOperator).getResource();
+            this.retryTime = this.resource.getInt(Constants.RETRY_TIME, DEFAULT_RETRY_TIME);
+            this.retryPeriod = this.resource.getLong(Constants.RETRY_PERIOD, DEFAULT_RETRY_PERIOD);
+        }
+
         this.transporter = new RedisTransporter();
     }
 

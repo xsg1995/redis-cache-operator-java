@@ -6,6 +6,8 @@ import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
+import live.xsg.cacheoperator.loader.PropertiesResourceLoader;
+import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 import org.apache.commons.lang3.StringUtils;
@@ -24,12 +26,19 @@ public class RedisCacheOperator implements CacheOperator {
     private CacheOperator cacheOperatorProxy;
 
     public RedisCacheOperator() {
-        this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator());
+        this(new RedisTransporter(), new PropertiesResourceLoader());
     }
 
-
     public RedisCacheOperator(Transporter transporter) {
-        this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator(transporter));
+        this(transporter, new PropertiesResourceLoader());
+    }
+
+    public RedisCacheOperator(ResourceLoader resourceLoader) {
+        this(new RedisTransporter(), resourceLoader);
+    }
+
+    public RedisCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
+        this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator(transporter, resourceLoader));
     }
 
     /**
@@ -78,12 +87,9 @@ public class RedisCacheOperator implements CacheOperator {
      * 内部类，实现 InvocationHandler，实现代理，控制访问
      */
     static class InnerRedisCacheOperator extends AbstractCacheOperator implements CacheOperator, InvocationHandler {
-        public InnerRedisCacheOperator() {
-            super(new RedisTransporter());
-        }
 
-        public InnerRedisCacheOperator(Transporter transporter) {
-            super(transporter);
+        public InnerRedisCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
+            super(transporter, resourceLoader);
         }
 
         @Override

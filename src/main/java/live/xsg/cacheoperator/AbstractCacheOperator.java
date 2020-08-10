@@ -7,8 +7,8 @@ import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.flusher.Refresher;
-import live.xsg.cacheoperator.resource.Resource;
-import live.xsg.cacheoperator.resource.ResourceHolder;
+import live.xsg.cacheoperator.loader.ResourceLoader;
+import live.xsg.cacheoperator.resource.DefaultResourceRegister;
 import live.xsg.cacheoperator.support.FailbackCacheOperator;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils;
  * 缓存操作类的抽象类，将通用方法抽取到这里
  * Created by xsg on 2020/7/26.
  */
-public abstract class AbstractCacheOperator implements CacheOperator {
+public abstract class AbstractCacheOperator extends DefaultResourceRegister implements CacheOperator {
     //默认刷新缓存的最大时间，2分钟，单位：ms
     protected static final long DEFAULT_LOADING_KEY_EXPIRE = 2 * 60 * 1000L;
     //默认延长时间，5分钟
@@ -36,10 +36,9 @@ public abstract class AbstractCacheOperator implements CacheOperator {
     protected FilterChain filterChain = FilterChain.getInstance();
     //失败降级策略
     protected FailbackCacheOperator failbackCacheOperator = new FailbackCacheOperator(this);
-    //获取资源数据
-    protected Resource resource = ResourceHolder.getInstance().getResource();
 
-    public AbstractCacheOperator(Transporter transporter) {
+    public AbstractCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
+        super(resourceLoader);
         this.transporter = transporter;
         this.loadingKeyExpire = this.resource.getLong(Constants.LOADING_KEY_EXPIRE, DEFAULT_LOADING_KEY_EXPIRE);
         this.extendExpire = this.resource.getLong(Constants.EXTEND_EXPIRE, DEFAULT_EXTEND_EXPIRE);
