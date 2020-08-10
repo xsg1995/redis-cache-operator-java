@@ -5,16 +5,13 @@ import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
-import live.xsg.cacheoperator.filter.Filter;
-import live.xsg.cacheoperator.filter.FilterChainBuilder;
+import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.resource.Resource;
 import live.xsg.cacheoperator.resource.ResourceHolder;
 import live.xsg.cacheoperator.support.FailbackCacheOperator;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.List;
 
 /**
  * 缓存操作类的抽象类，将通用方法抽取到这里
@@ -36,9 +33,7 @@ public abstract class AbstractCacheOperator implements CacheOperator {
     //异步任务执行器
     protected CacheExecutor asyncCacheExecutor = new AsyncCacheExecutor();
     //过滤器链构造器
-    private FilterChainBuilder filterChainBuilder = FilterChainBuilder.getInstance();
-    //过滤器链
-    protected List<Filter> filters;
+    protected FilterChain filterChain = FilterChain.getInstance();
     //失败降级策略
     protected FailbackCacheOperator failbackCacheOperator = new FailbackCacheOperator(this);
     //获取资源数据
@@ -48,15 +43,6 @@ public abstract class AbstractCacheOperator implements CacheOperator {
         this.transporter = transporter;
         this.loadingKeyExpire = this.resource.getLong(Constants.LOADING_KEY_EXPIRE, DEFAULT_LOADING_KEY_EXPIRE);
         this.extendExpire = this.resource.getLong(Constants.EXTEND_EXPIRE, DEFAULT_EXTEND_EXPIRE);
-
-        this.buildFilter();
-    }
-
-    /**
-     * 创建过滤器链
-     */
-    private void buildFilter() {
-        this.filters = this.filterChainBuilder.build();
     }
 
     /**
@@ -154,41 +140,4 @@ public abstract class AbstractCacheOperator implements CacheOperator {
         return (StringCodec.StringData) this.stringCodec.decode(data);
     }
 
-    /**
-     * 添加过滤器
-     * @param filter 过滤器
-     */
-    protected void addFilter(Filter filter) {
-        this.filters.add(filter);
-    }
-
-    /**
-     * 调用所有过滤器链的前置处理
-     * @param key key
-     * @return true，继续执行后续逻辑；false，不执行后续逻辑
-     */
-    protected boolean preFilter(String key) {
-        for (Filter filter : filters) {
-            if (!filter.preFilter(key)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * 调用所有过滤器的后置处理
-     * @param key key
-     * @param result 返回结果
-     */
-    protected void postFilter(String key, Object result) {
-        for (Filter filter : filters) {
-            try {
-                filter.postFilter(key, result);
-            } catch (Exception e) {
-                //失败不影响后续逻辑
-                e.printStackTrace();
-            }
-        }
-    }
 }

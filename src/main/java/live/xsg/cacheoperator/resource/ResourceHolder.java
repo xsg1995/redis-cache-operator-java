@@ -9,17 +9,15 @@ import live.xsg.cacheoperator.loader.ResourceLoader;
  */
 public class ResourceHolder {
 
+    private static ResourceHolder holder = new ResourceHolder();
+
     //资源加载器
     private ResourceLoader resourceLoader = new PropertiesResourceLoader();
     //资源
     private Resource resource;
 
-    static class ResourceHolderHolder {
-        private static ResourceHolder holder = new ResourceHolder();
-    }
-
     public static ResourceHolder getInstance() {
-        return ResourceHolder.ResourceHolderHolder.holder;
+        return holder;
     }
 
     private ResourceHolder() {

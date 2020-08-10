@@ -105,16 +105,16 @@ public class RedisCacheOperator implements CacheOperator {
             }
             String key = (String) args[0];
             //过滤器链前置处理
-            if (!this.preFilter(key)) {
+            if (!this.filterChain.preFilter(key)) {
                 //过滤器链后置处理
-                this.postFilter(key, null);
+                this.filterChain.postFilter(key, null);
                 return null;
             }
 
             Object result = this.failbackCacheOperator.invoke(method, args);
 
             //过滤器链后置处理
-            this.postFilter(key, result);
+            this.filterChain.postFilter(key, result);
 
             return result;
         }

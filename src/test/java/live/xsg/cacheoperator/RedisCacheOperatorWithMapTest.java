@@ -2,7 +2,7 @@ package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.filter.Filter;
-import live.xsg.cacheoperator.filter.FilterChainBuilder;
+import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.transport.MapTransporter;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.testng.annotations.Test;
@@ -148,7 +148,7 @@ public class RedisCacheOperatorWithMapTest {
     }
 
     public void filter_test() {
-        FilterChainBuilder instance = FilterChainBuilder.getInstance();
+        FilterChain instance = FilterChain.getInstance();
         instance.addFilter(new Filter() {
             @Override
             public boolean preFilter(String key) {
