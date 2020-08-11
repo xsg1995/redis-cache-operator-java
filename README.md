@@ -11,7 +11,7 @@
 - 缓存雪崩：当缓存层出现了错误，不能正常工作，于是请求都会直接请求持久层数据库，导致持久层数据库也收到影响
 
 ## 功能特点
-- 单线程刷新：当缓存没有命中某个key或者缓存过期时，控制只能有一个线程可以查询数据库刷新缓存
+- 单线程刷新：当缓存没有命中某个key或者缓存过期时，控制只能有一个线程可以查询数据库刷新缓存，其他线程返回缓存中旧的值或者默认值
 - 异步刷新：当缓存没有命中某个key或者缓存过期时，异步刷新缓存，不会阻塞请求
 - 缓存降级：当缓存没有命中某个key或者缓存过期时，如果缓存中存在旧值则返回缓存中的旧值，否则返回默认值
 - 自定义过滤器：实现前置过滤和后置过滤，前置过滤可以用于过滤部分不符合条件的key，后置过滤可以取得key与返回的结果，支持SPI或程序手动注入过滤器
@@ -19,12 +19,31 @@
 
 ## 使用
 ### 字符串对象
+* 当缓存中存在key为sayHello的值时，则返回缓存中的值；
+* 当缓存中不存在key为sayHello的值时，将调用Refresher执行业务逻辑，获取具体的值填充到缓存中并返回；
 ```java
+String key = "sayHello";
+String sourceValue = "hello world!";
+long expire = 10 * 60 * 1000;  //10 分钟
+
 CacheOperator cacheOperator = new RedisCacheOperator();
-String key = "key";
-String val = cacheOperator.getString(key, expire, () -> {
-    //执行业务逻辑获取value
-    String value = "value1";
-    return value;
+String cacheValue = cacheOperator.getString(key, expire, () -> {
+    //执行业务逻辑，获取值
+    return sourceValue;
 });
+```
+* 异步刷新缓存
+* 当缓存中存在key为sayHello的值时，则返回缓存中的值；
+* 当缓存中不存在key为sayHello的值时，将异步调用Refresher执行具体业务逻辑，获取具体的值填充到缓存中；
+```java
+String key = "sayHello";
+String sourceValue = "hello world!";
+String defaultValue = "Hi!";  //默认值
+long expire = 10 * 60 * 1000;  //10 分钟
+
+CacheOperator cacheOperator = new RedisCacheOperator();
+String cacheValue = cacheOperator.getStringAsync(key, expire, () -> {
+    //执行业务逻辑，获取值
+    return sourceValue;
+}, defaultValue);
 ```

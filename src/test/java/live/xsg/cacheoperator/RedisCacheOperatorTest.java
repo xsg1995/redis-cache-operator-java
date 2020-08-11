@@ -1,165 +1,62 @@
 package live.xsg.cacheoperator;
 
-import live.xsg.cacheoperator.flusher.Refresher;
-import live.xsg.cacheoperator.mock.AbstractMockCacheOperator;
-import live.xsg.cacheoperator.mock.MockRegister;
+import live.xsg.cacheoperator.transport.Transporter;
+import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 
 /**
- * Created by xsg on 2020/7/31.
+ * Created by xsg on 2020/8/11.
  */
-@Test
 public class RedisCacheOperatorTest {
 
-    public void getString_with_test() {
+    private Transporter transporter = new RedisTransporter();
+
+    @Test
+    public void getString_with_fluster_test() {
+        String key = "sayHello";
+        String sourceValue = "hello world!";
+        long expire = 10 * 60 * 1000;  //10 分钟
+
         CacheOperator cacheOperator = new RedisCacheOperator();
-        String key = "key1";
-        String value = "value1";
-        long expire = 2 * 1000;
-        String val = cacheOperator.getString(key, expire, () -> {
-            System.out.println("加载数据...");
-            return value;
-        });
-        assertEquals(val, value);
-    }
-
-    public void getStringAsync_test() throws InterruptedException {
-        CacheOperator cacheOperator = new RedisCacheOperator();
-        String key = "key1";
-        String value = "value1";
-        long expire = 2000;
-
-        List<Thread> list = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            list.add(new Thread(() -> {
-                String res = cacheOperator.getStringAsync(key, expire, () -> {
-                    System.out.println("加载数据...");
-                    return value;
-                });
-                System.out.println(res);
-            }));
-        }
-
-        for (Thread thread : list) {
-            thread.start();
-        }
-        for (Thread thread : list) {
-            thread.join();
-        }
-
-        sleep(1);
-
-
-        list = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            list.add(new Thread(() -> {
-                String res = cacheOperator.getStringAsync(key, expire, () -> {
-                    System.out.println("加载数据...");
-                    return value;
-                });
-                System.out.println(res);
-            }));
-        }
-
-        for (Thread thread : list) {
-            thread.start();
-        }
-        for (Thread thread : list) {
-            thread.join();
-        }
-    }
-
-    public void getStringAsync_default_test() throws InterruptedException {
-        CacheOperator cacheOperator = new RedisCacheOperator();
-        String key = "key1";
-        String value = "value1";
-        long expire = 2000;
-
-        List<Thread> list = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            list.add(new Thread(() -> {
-                String res = cacheOperator.getStringAsync(key, expire, () -> {
-                    System.out.println("加载数据...");
-                    return value;
-                }, "defaultVal");
-                System.out.println(res);
-            }));
-        }
-
-        for (Thread thread : list) {
-            thread.start();
-        }
-        for (Thread thread : list) {
-            thread.join();
-        }
-
-        sleep(1);
-
-        list = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            list.add(new Thread(() -> {
-                String res = cacheOperator.getStringAsync(key, expire, () -> {
-                    System.out.println("加载数据...");
-                    return value;
-                }, "defaultVal");
-                System.out.println(res);
-            }));
-        }
-
-        for (Thread thread : list) {
-            thread.start();
-        }
-        for (Thread thread : list) {
-            thread.join();
-        }
-    }
-
-    public void failback_retry_test() {
-        RedisCacheOperator cacheOperator = new RedisCacheOperator();
-        String key = "key";
-        String value = "value";
-        long expire = 10 * 1000L;
-        String val = cacheOperator.getString(key, expire, () -> value);
-        System.out.println("failback_retry_test_return1:" + val);
-
-        val = cacheOperator.getString(key, expire, () -> value);
-        System.out.println("failback_retry_test_return2:" + val);
-
-        sleep(60);
-
-        val = cacheOperator.getString(key, expire, () -> value);
-        System.out.println("failback_retry_test_return3:" + val);
-    }
-
-    public void failback_retry_with_mock_test() {
-
-        MockRegister.getInstance().register(new AbstractMockCacheOperator() {
-            @Override
-            public String getString(String key, long expire, Refresher<String> flusher) {
-                return "my_mock_data";
-            }
+        String cacheValue = cacheOperator.getString(key, expire, () -> {
+            //执行业务逻辑，获取值
+            return sourceValue;
         });
 
-        RedisCacheOperator cacheOperator = new RedisCacheOperator();
-        String key = "key";
-        String value = "value";
-        long expire = 10 * 1000L;
-        String val = cacheOperator.getString(key, expire, () -> value);
-        System.out.println(val);
+        transporter.del(key);
+        assertEquals(sourceValue, cacheValue);
     }
 
-    //线程睡眠
-    public void sleep(int second) {
+    @Test
+    public void getStringAsync_with_fluster_test() {
+        String key = "sayHello";
+        String sourceValue = "hello world!";
+        String defaultValue = "Hi!";
+        long expire = 10 * 60 * 1000;  //10 分钟
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+        String cacheValue = cacheOperator.getStringAsync(key, expire, () -> {
+            //执行业务逻辑，获取值
+            return sourceValue;
+        }, defaultValue);
+
+        assertEquals(cacheValue, defaultValue);
+        sleep(2);
+
+        cacheValue = cacheOperator.getString(key);
+        assertEquals(cacheValue, sourceValue);
+
+        transporter.del(key);
+    }
+
+    private void sleep(int second) {
         try {
             TimeUnit.SECONDS.sleep(second);
         } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 }
