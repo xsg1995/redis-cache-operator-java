@@ -37,13 +37,11 @@ String cacheValue = cacheOperator.getString(key, expire, () -> {
 String key = "sayHello";
 String mockValue = "i am mock value.";
 
-Mock mock = (k, cacheOperator, method) -> {
+MockRegister.getInstance().register((k, cacheOperator, method) -> {
     if (key.equals(k)) {
         return mockValue;
     }
     return null;
-};
-
-MockRegister.getInstance().register(mock);
+});
 ```
 >  使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加实现类，无需代码注入

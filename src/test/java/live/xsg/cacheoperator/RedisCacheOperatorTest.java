@@ -1,7 +1,6 @@
 package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.common.Constants;
-import live.xsg.cacheoperator.mock.Mock;
 import live.xsg.cacheoperator.mock.MockRegister;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
@@ -62,15 +61,12 @@ public class RedisCacheOperatorTest {
         long expire = 10 * 60 * 1000;  //10 分钟
         String mockValue = "i am mock value.";
 
-        Mock mock = (k, cacheOperator, method) -> {
+        MockRegister.getInstance().register((k, cacheOperator, method) -> {
             if (key.equals(k)) {
                 return mockValue;
             }
             return null;
-        };
-
-        MockRegister.getInstance().register(mock);
-
+        });
 
         CacheOperator cacheOperator = new RedisCacheOperator();
         String cacheValue = cacheOperator.getString(key, expire, () -> {
