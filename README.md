@@ -44,4 +44,4 @@ MockRegister.getInstance().register((k, cacheOperator, method) -> {
     return null;
 });
 ```
->  使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加实现类，无需代码注入
+>  使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加Mock实现类，无需代码注入
