@@ -32,18 +32,18 @@ String cacheValue = cacheOperator.getString(key, expire, () -> {
     return sourceValue;
 });
 ```
-* 异步刷新缓存
-* 当缓存中存在key为sayHello的值时，则返回缓存中的值；
-* 当缓存中不存在key为sayHello的值时，将异步调用Refresher执行具体业务逻辑，获取具体的值填充到缓存中；
+* 注册mock降级
 ```java
 String key = "sayHello";
-String sourceValue = "hello world!";
-String defaultValue = "Hi!";  //默认值
-long expire = 10 * 60 * 1000;  //10 分钟
+String mockValue = "i am mock value.";
 
-CacheOperator cacheOperator = new RedisCacheOperator();
-String cacheValue = cacheOperator.getStringAsync(key, expire, () -> {
-    //执行业务逻辑，获取值
-    return sourceValue;
-}, defaultValue);
+Mock mock = (k, cacheOperator, method) -> {
+    if (key.equals(k)) {
+        return mockValue;
+    }
+    return null;
+};
+
+MockRegister.getInstance().register(mock);
 ```
+>  使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加实现类，无需代码注入

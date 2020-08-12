@@ -54,28 +54,13 @@ public class RedisCacheOperator implements CacheOperator {
     }
 
     @Override
-    public String getString(String key, long expire, Refresher<String> flusher, String defaultVal) {
-        return this.cacheOperatorProxy.getString(key, expire, flusher, defaultVal);
-    }
-
-    @Override
     public String getStringAsync(String key, long expire, Refresher<String> flusher) {
         return this.cacheOperatorProxy.getStringAsync(key, expire, flusher);
     }
 
     @Override
-    public String getStringAsync(String key, long expire, Refresher<String> flusher, String defaultVal) {
-        return this.cacheOperatorProxy.getStringAsync(key, expire, flusher, defaultVal);
-    }
-
-    @Override
     public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
         return this.cacheOperatorProxy.getStringAsync(key, expire, flusher, executor);
-    }
-
-    @Override
-    public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor, String defaultVal) {
-        return this.cacheOperatorProxy.getStringAsync(key, expire, flusher, executor, defaultVal);
     }
 
     @Override
@@ -127,35 +112,20 @@ public class RedisCacheOperator implements CacheOperator {
 
         @Override
         public String getString(String key, long expire, Refresher<String> flusher) {
-            return this.getString(key, expire, flusher, new SyncCacheExecutor(), null);
-        }
-
-        @Override
-        public String getString(String key, long expire, Refresher<String> flusher, String defaultVal) {
-            return this.getString(key, expire, flusher, new SyncCacheExecutor(), defaultVal);
+            return this.getString(key, expire, flusher, new SyncCacheExecutor());
         }
 
         @Override
         public String getStringAsync(String key, long expire, Refresher<String> flusher) {
-            return this.getString(key, expire, flusher, this.asyncCacheExecutor, null);
-        }
-
-        @Override
-        public String getStringAsync(String key, long expire, Refresher<String> flusher, String defaultVal) {
-            return this.getString(key, expire, flusher, this.asyncCacheExecutor, defaultVal);
+            return this.getString(key, expire, flusher, this.asyncCacheExecutor);
         }
 
         @Override
         public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
-            return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor), null);
+            return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor));
         }
 
-        @Override
-        public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor, String defaultVal) {
-            return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor), defaultVal);
-        }
-
-        private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor cacheExecutor, String defaultVal) {
+        private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor cacheExecutor) {
             String res = this.transporter.get(key);
 
             if (StringUtils.isBlank(res)) {
@@ -177,11 +147,6 @@ public class RedisCacheOperator implements CacheOperator {
                     //未过期
                     res = stringData.getData();
                 }
-            }
-
-            //如果返回值为空且设置了默认值，返回默认值
-            if (StringUtils.isEmpty(res) && defaultVal != null) {
-                res = defaultVal;
             }
             return res;
         }

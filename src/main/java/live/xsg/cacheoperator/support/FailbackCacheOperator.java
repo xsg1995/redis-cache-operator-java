@@ -3,6 +3,7 @@ package live.xsg.cacheoperator.support;
 import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.exception.RetryRecoverException;
+import live.xsg.cacheoperator.mock.Mock;
 import live.xsg.cacheoperator.mock.MockRegister;
 import live.xsg.cacheoperator.resource.Resource;
 import live.xsg.cacheoperator.resource.ResourceRegister;
@@ -144,13 +145,14 @@ public class FailbackCacheOperator {
      * redis失败后走降级逻辑=
      * @return 返回降级逻辑的结果
      */
-    private Object doMock(Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+    private Object doMock(Method method, Object[] args) {
+        String key = (String) args[0];
         //获取mock列表
-        Iterator<CacheOperator> mockCacheOperators = this.mockRegister.getMockCacheOperators();
+        Iterator<Mock> mockCacheOperators = this.mockRegister.getMockCacheOperators();
         while (mockCacheOperators.hasNext()) {
-            CacheOperator mock = mockCacheOperators.next();
+            Mock mock = mockCacheOperators.next();
             //执行mock逻辑
-            Object result = method.invoke(mock, args);
+            Object result = mock.mock(key, this.cacheOperator, method);
             if (result != null) {
                 return result;
             }

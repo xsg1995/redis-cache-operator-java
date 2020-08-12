@@ -1,6 +1,5 @@
 package live.xsg.cacheoperator.mock;
 
-import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.extension.ExtensionLoader;
 
 import java.util.Collections;
@@ -16,7 +15,7 @@ public class MockRegister {
 
     private ExtensionLoader<Mock> extensionLoader = new ExtensionLoader<>();
     //mock实现类
-    private List<CacheOperator> mockCacheOperators = new LinkedList<>();
+    private List<Mock> mocks = new LinkedList<>();
 
     static class MockRegisterHolder {
         private static MockRegister holder = new MockRegister();
@@ -29,26 +28,24 @@ public class MockRegister {
     private MockRegister() {
         List<Mock> extensions = extensionLoader.getExtensions(Mock.class);
         for (Mock mock : extensions) {
-            if (mock instanceof CacheOperator) {
-                mockCacheOperators.add((CacheOperator) mock);
-            }
+            mocks.add(mock);
         }
     }
 
     /**
      * 注册mock
-     * @param mockCacheOperator 实现的mock逻辑
+     * @param mock 实现的mock逻辑
      */
-    public void register(CacheOperator mockCacheOperator) {
-        this.mockCacheOperators.add(mockCacheOperator);
+    public void register(Mock mock) {
+        this.mocks.add(mock);
     }
 
     /**
      * 获取mock实现类列表
      * @return mock实现类列表
      */
-    public Iterator<CacheOperator> getMockCacheOperators() {
-        List<CacheOperator> cacheOperators = Collections.unmodifiableList(this.mockCacheOperators);
+    public Iterator<Mock> getMockCacheOperators() {
+        List<Mock> cacheOperators = Collections.unmodifiableList(this.mocks);
         return cacheOperators.iterator();
     }
 }

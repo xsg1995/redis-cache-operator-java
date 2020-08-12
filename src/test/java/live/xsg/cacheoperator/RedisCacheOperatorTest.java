@@ -1,5 +1,8 @@
 package live.xsg.cacheoperator;
 
+import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.mock.Mock;
+import live.xsg.cacheoperator.mock.MockRegister;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 import org.testng.annotations.Test;
@@ -35,22 +38,47 @@ public class RedisCacheOperatorTest {
     public void getStringAsync_with_fluster_test() {
         String key = "sayHello";
         String sourceValue = "hello world!";
-        String defaultValue = "Hi!";
         long expire = 10 * 60 * 1000;  //10 分钟
 
         CacheOperator cacheOperator = new RedisCacheOperator();
         String cacheValue = cacheOperator.getStringAsync(key, expire, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
-        }, defaultValue);
+        });
 
-        assertEquals(cacheValue, defaultValue);
+        assertEquals(cacheValue, Constants.EMPTY_STRING);
         sleep(2);
 
         cacheValue = cacheOperator.getString(key);
         assertEquals(cacheValue, sourceValue);
 
         transporter.del(key);
+    }
+
+    @Test
+    public void getString_with_mock_test() {
+        String key = "sayHello";
+        String sourceValue = "hello world!";
+        long expire = 10 * 60 * 1000;  //10 分钟
+        String mockValue = "i am mock value.";
+
+        Mock mock = (k, cacheOperator, method) -> {
+            if (key.equals(k)) {
+                return mockValue;
+            }
+            return null;
+        };
+
+        MockRegister.getInstance().register(mock);
+
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+        String cacheValue = cacheOperator.getString(key, expire, () -> {
+            //执行业务逻辑，获取值
+            return sourceValue;
+        });
+
+        assertEquals(cacheValue, mockValue);
     }
 
     private void sleep(int second) {
