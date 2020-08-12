@@ -35,11 +35,10 @@ String cacheValue = cacheOperator.getString(key, expire, () -> {
 * 注册mock降级
 ```java
 String key = "sayHello";
-String mockValue = "i am mock value.";
 
 MockRegister.getInstance().register((k, cacheOperator, method) -> {
     if (key.equals(k)) {
-        return mockValue;
+        return "i am mock value.";
     }
     return null;
 });
