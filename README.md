@@ -13,7 +13,7 @@
 ## 功能特点
 - 单线程刷新：当缓存没有命中某个key或者缓存过期时，控制只能有一个线程可以查询数据库刷新缓存
 - 异步刷新：当缓存没有命中某个key或者缓存过期时，异步刷新缓存，不会阻塞请求
-- 缓存降级：当缓存没有命中某个key或者缓存过期时，如果缓存中存在旧值则返回缓存中的旧值，否则返回默认值
+- 缓存降级：当缓存没有命中某个key或者缓存过期时，如果缓存中存在旧值则返回缓存中的旧值
 - 自定义过滤器：实现前置过滤和后置过滤，前置过滤可以用于过滤部分不符合条件的key，后置过滤可以取得key与返回的结果，支持SPI或程序手动注入过滤器
 - 失败降级： 如果访问redis错误，则切断与redis的操作，走降级逻辑(自定义mock降级)，期间重试(频率30s)redis查看是否恢复，恢复则继续提供服务
 
@@ -32,7 +32,9 @@ String cacheValue = cacheOperator.getString(key, expire, () -> {
     return sourceValue;
 });
 ```
-* 注册mock降级
+### mock降级使用
+* 使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加Mock实现类
+* 代码注入mock降级逻辑
 ```java
 String key = "sayHello";
 
@@ -43,4 +45,24 @@ MockRegister.getInstance().register((k, cacheOperator, method) -> {
     return null;
 });
 ```
->  使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加Mock实现类，无需代码注入
+
+### filter过滤器使用
+* 使用SPI，则在META-INF/services/live.xsg.cacheoperator.filter.Filter文件中添加Filter实现类
+* 代码注入filter实现逻辑
+```java
+String ignoreKey = "ignoreKey";
+FilterChain.getInstance().addFilter(new Filter() {
+    @Override
+    public boolean preFilter(String key) {
+        if (ignoreKey.equals(key)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void postFilter(String key, Object result) {
+        System.out.println("key:" + key + " 查询结果:" + result);
+    }
+});
+```

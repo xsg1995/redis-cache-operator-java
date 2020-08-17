@@ -1,6 +1,8 @@
 package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.filter.Filter;
+import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.mock.MockRegister;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
@@ -9,11 +11,14 @@ import org.testng.annotations.Test;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * Created by xsg on 2020/8/11.
  */
 public class RedisCacheOperatorTest {
+
+    public static long EXPIRE = 10 * 60 * 1000;  //10 分钟
 
     private Transporter transporter = new RedisTransporter();
 
@@ -58,7 +63,6 @@ public class RedisCacheOperatorTest {
     public void getString_with_mock_test() {
         String key = "sayHello";
         String sourceValue = "hello world!";
-        long expire = 10 * 60 * 1000;  //10 分钟
         String mockValue = "i am mock value.";
 
         MockRegister.getInstance().register((k, cacheOperator, method) -> {
@@ -69,12 +73,49 @@ public class RedisCacheOperatorTest {
         });
 
         CacheOperator cacheOperator = new RedisCacheOperator();
-        String cacheValue = cacheOperator.getString(key, expire, () -> {
+        String cacheValue = cacheOperator.getString(key, EXPIRE, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
         });
 
         assertEquals(cacheValue, mockValue);
+    }
+
+    @Test
+    public void getString_with_filter_test() {
+        String ignoreKey = "ignoreKey";
+        FilterChain.getInstance().addFilter(new Filter() {
+            @Override
+            public boolean preFilter(String key) {
+                if (ignoreKey.equals(key)) {
+                    return false;
+                }
+                return true;
+            }
+
+            @Override
+            public void postFilter(String key, Object result) {
+                System.out.println("key:" + key + " 查询结果:" + result);
+            }
+        });
+
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+
+        String ignoreValue = cacheOperator.getString(ignoreKey, EXPIRE, () -> {
+            //执行业务逻辑，获取值
+            return "value";
+        });
+
+
+        String targetKey = "targetKey";
+        String targetValue = cacheOperator.getString(targetKey, EXPIRE, () -> {
+            //执行业务逻辑，获取值
+            return "value";
+        });
+
+        assertNull(ignoreValue);
+        assertEquals(targetValue, "value");
     }
 
     private void sleep(int second) {
