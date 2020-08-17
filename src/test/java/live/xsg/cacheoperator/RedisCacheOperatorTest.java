@@ -8,6 +8,7 @@ import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 import org.testng.annotations.Test;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
@@ -116,6 +117,14 @@ public class RedisCacheOperatorTest {
 
         assertNull(ignoreValue);
         assertEquals(targetValue, "value");
+    }
+
+    @Test
+    public void getAllMap_test() {
+        String mapKey = "mapKey";
+        CacheOperator cacheOperator = new RedisCacheOperator();
+        Map<String, String> resMap = cacheOperator.getAllMap(mapKey);
+        System.out.println(resMap);
     }
 
     private void sleep(int second) {

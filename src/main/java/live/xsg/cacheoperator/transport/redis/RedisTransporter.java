@@ -1,11 +1,12 @@
 package live.xsg.cacheoperator.transport.redis;
 
-import com.sun.corba.se.impl.orbutil.closure.Constant;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+
+import java.util.Map;
 
 /**
  * 与redis交互底层接口
@@ -31,7 +32,7 @@ public class RedisTransporter implements Transporter {
     }
 
     @Override
-    public String get(String key) {
+    public String getString(String key) {
         return execute((jedis) -> jedis.get(key));
     }
 
@@ -60,6 +61,11 @@ public class RedisTransporter implements Transporter {
     @Override
     public void incr(String key) {
         this.execute(jedis -> jedis.incr(key));
+    }
+
+    @Override
+    public Map<String, String> getAllMap(String key) {
+        return this.execute(jedis -> jedis.hgetAll(key));
     }
 
     private <T> T execute(JedisExecutor<T> executor) {

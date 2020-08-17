@@ -1,6 +1,8 @@
 package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.codec.Codec;
+import live.xsg.cacheoperator.codec.CodecEnum;
+import live.xsg.cacheoperator.codec.CodecFactory;
 import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
@@ -28,8 +30,6 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     protected long extendExpire;
     //服务器交互接口 RedisTransporter
     protected Transporter transporter;
-    //String类型编解码
-    protected Codec stringCodec = new StringCodec();
     //异步任务执行器
     protected CacheExecutor asyncCacheExecutor = new AsyncCacheExecutor();
     //过滤器链构造器
@@ -62,9 +62,9 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
             }
 
             //检查是否已经有其他线程刷新完缓存
-            String res = this.transporter.get(key);
+            String res = this.transporter.getString(key);
             if (StringUtils.isNotBlank(res)) {
-                StringCodec.StringData stringData = this.getDecodeStringData(res);
+                StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
                 boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
                 if (!invalid) {
                     //没有过期，已有其他线程刷新了缓存，返回缓存数据
@@ -79,7 +79,8 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
             }
 
             long newExpire = this.getExtendExpire(expire);
-            this.transporter.set(key, newExpire, (String) this.stringCodec.encode(expire, data));
+            String encode = (String) this.getEncodeData(expire, data, CodecEnum.STRING);
+            this.transporter.set(key, newExpire, encode);
 
             return data;
         } finally {
@@ -131,12 +132,27 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     }
 
     /**
-     * 从编码后的字符串中，解码获取数据
-     * @param data 编码后的字符串
-     * @return 解码后的结果
+     * 获取编码数据
+     * @param expire 过期时间
+     * @param data 编码前的数据
+     * @param codecEnum codecEnum
+     * @return 编码后的数据
      */
-    protected StringCodec.StringData getDecodeStringData(String data) {
-        return (StringCodec.StringData) this.stringCodec.decode(data);
+    private Object getEncodeData(long expire, String data, CodecEnum codecEnum) {
+        Codec codec = CodecFactory.getByType(codecEnum);
+
+        return codec.encode(expire, data);
     }
 
+    /**
+     * 从编码后的数据中返回解码后的数据
+     * @param data 编码后的数据
+     * @param codecEnum CodecEnum
+     * @return 解码后的数据
+     */
+    protected Object getDecodeData(Object data, CodecEnum codecEnum) {
+        Codec codec = CodecFactory.getByType(codecEnum);
+
+        return codec.decode(data);
+    }
 }

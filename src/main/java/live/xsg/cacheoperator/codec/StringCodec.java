@@ -7,11 +7,11 @@ import live.xsg.cacheoperator.common.Constants;
 /**
  * Created by xsg on 2020/7/20.
  */
-public class StringCodec implements Codec {
+public class StringCodec extends AbstractCodec {
     @Override
     public Object encode(long expire, Object message) {
         String data = (String) message;
-        long absoluteExpireTime = System.currentTimeMillis() + expire;
+        long absoluteExpireTime = this.getAbsolutionExpireTime(expire);
         StringData stringData = new StringData(absoluteExpireTime, data);
         return JSONObject.toJSONString(stringData);
     }
@@ -37,9 +37,6 @@ public class StringCodec implements Codec {
         long absoluteExpireTime;
         //实际数据
         String data;
-
-        public StringData() {
-        }
 
         public StringData(long absoluteExpireTime, String data) {
             this.absoluteExpireTime = absoluteExpireTime;

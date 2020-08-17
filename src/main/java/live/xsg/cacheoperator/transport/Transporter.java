@@ -1,5 +1,7 @@
 package live.xsg.cacheoperator.transport;
 
+import java.util.Map;
+
 /**
  * 与缓存服务器交互接口
  * Created by xsg on 2020/7/20.
@@ -11,7 +13,7 @@ public interface Transporter {
      * @param key key
      * @return value
      */
-    String get(String key);
+    String getString(String key);
 
     /**
      * 设置key value
@@ -42,4 +44,10 @@ public interface Transporter {
      */
     void incr(String key);
 
+    /**
+     * 根据 key 获取 map 类型的值
+     * @param key key
+     * @return value
+     */
+    Map<String, String> getAllMap(String key);
 }

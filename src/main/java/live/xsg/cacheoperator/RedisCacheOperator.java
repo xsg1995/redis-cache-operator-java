@@ -1,5 +1,7 @@
 package live.xsg.cacheoperator;
 
+import live.xsg.cacheoperator.codec.CodecEnum;
+import live.xsg.cacheoperator.codec.MapCodec;
 import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
@@ -15,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -66,6 +69,11 @@ public class RedisCacheOperator implements CacheOperator {
     @Override
     public String getString(String key) {
         return this.cacheOperatorProxy.getString(key);
+    }
+
+    @Override
+    public Map<String, String> getAllMap(String key) {
+        return this.cacheOperatorProxy.getAllMap(key);
     }
 
     /**
@@ -126,14 +134,14 @@ public class RedisCacheOperator implements CacheOperator {
         }
 
         private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor cacheExecutor) {
-            String res = this.transporter.get(key);
+            String res = this.transporter.getString(key);
 
             if (StringUtils.isBlank(res)) {
                 //缓存中不存在数据，获取数据，放入缓存
                 res = (String) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
             } else {
                 //缓存中存在数据，判断缓存是否已经过期
-                StringCodec.StringData stringData = this.getDecodeStringData(res);
+                StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
                 boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
 
                 if (invalid) {
@@ -153,8 +161,8 @@ public class RedisCacheOperator implements CacheOperator {
 
         @Override
         public String getString(String key) {
-            String res = this.transporter.get(key);
-            StringCodec.StringData stringData = this.getDecodeStringData(res);
+            String res = this.transporter.getString(key);
+            StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
             boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
 
             if (invalid) {
@@ -162,6 +170,19 @@ public class RedisCacheOperator implements CacheOperator {
                 return Constants.EMPTY_STRING;
             }
             return stringData.getData();
+        }
+
+        @Override
+        public Map<String, String> getAllMap(String key) {
+            Map<String, String> map = this.transporter.getAllMap(key);
+            MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(map, CodecEnum.MAP);
+            boolean invalid = this.isInvalid(mapData.getAbsoluteExpireTime());
+
+            if (invalid) {
+                return Constants.EMPTY_MAP;
+            }
+
+            return mapData.getData();
         }
     }
 
