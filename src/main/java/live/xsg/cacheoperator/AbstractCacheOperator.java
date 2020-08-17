@@ -3,17 +3,12 @@ package live.xsg.cacheoperator;
 import live.xsg.cacheoperator.codec.Codec;
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.CodecFactory;
-import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
-import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
-import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.filter.FilterChain;
-import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.resource.DefaultResourceRegister;
 import live.xsg.cacheoperator.support.FailbackCacheOperator;
 import live.xsg.cacheoperator.transport.Transporter;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * 缓存操作类的抽象类，将通用方法抽取到这里
@@ -30,8 +25,8 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     protected long extendExpire;
     //服务器交互接口 RedisTransporter
     protected Transporter transporter;
-    //异步任务执行器
-    protected CacheExecutor asyncCacheExecutor = new AsyncCacheExecutor();
+    //string类型操作接口
+    protected StringOperator stringOperator;
     //过滤器链构造器
     protected FilterChain filterChain = FilterChain.getInstance();
     //失败降级策略
@@ -40,80 +35,23 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     public AbstractCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(resourceLoader);
         this.transporter = transporter;
+        this.stringOperator = new RedisStringOperator(this.transporter, this);
         this.loadingKeyExpire = this.resource.getLong(Constants.LOADING_KEY_EXPIRE, DEFAULT_LOADING_KEY_EXPIRE);
         this.extendExpire = this.resource.getLong(Constants.EXTEND_EXPIRE, DEFAULT_EXTEND_EXPIRE);
     }
 
-    /**
-     * 填充数据到缓存中
-     * @param key key
-     * @param expire 缓存过期时间
-     * @param flusher 获取缓存数据
-     * @return 返回最新数据
-     */
-    protected String doFillStringCache(String key, long expire, Refresher<String> flusher) {
-        boolean isLoading = false;
-        try {
-            //设置正在加载key对应的数据
-            isLoading = this.isLoading(key);
-            //isLoading=true，则已有其他线程在刷新数据
-            if (isLoading) {
-                return Constants.EMPTY_STRING;
-            }
-
-            //检查是否已经有其他线程刷新完缓存
-            String res = this.transporter.getString(key);
-            if (StringUtils.isNotBlank(res)) {
-                StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
-                boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
-                if (!invalid) {
-                    //没有过期，已有其他线程刷新了缓存，返回缓存数据
-                    return stringData.getData();
-                }
-            }
-
-            String data = flusher.refresh();
-
-            if (StringUtils.isBlank(data)) {
-                data = Constants.EMPTY_STRING;
-            }
-
-            long newExpire = this.getExtendExpire(expire);
-            String encode = (String) this.getEncodeData(expire, data, CodecEnum.STRING);
-            this.transporter.set(key, newExpire, encode);
-
-            return data;
-        } finally {
-            if (!isLoading) {
-                //设置key已经加载完毕
-                this.loadFinish(key);
-            }
-        }
-    }
-
-    /**
-     * 延长时间过期时间
-     * @param expire 原来的过期时间
-     * @return 延长后的过期时间
-     */
-    private long getExtendExpire(long expire) {
+    @Override
+    public long getExtendExpire(long expire) {
         return expire + this.extendExpire;
     }
 
-    /**
-     * 设置key对应的数据已经加载完毕
-     * @param key key
-     */
-    protected void loadFinish(String key) {
+    @Override
+    public void loadFinish(String key) {
         this.transporter.del(Constants.LOADING_KEY + key);
     }
 
-    /**
-     * 设置key对应的数据正在加载，如果没有其他线程在刷新数据，则当前线程进行刷新
-     * @param key key
-     * @return 返回true，则说明已有其他线程正在刷新，返回false，则表示没有其他线程在刷新
-     */
-    protected boolean isLoading(String key) {
+    @Override
+    public boolean isLoading(String key) {
         //设置缓存最长刷新时间为 loadingKeyExpire ，在该时段内，只有一个线程刷新缓存
         long expire = this.loadingKeyExpire;
         int res = this.transporter.setIfNotExist(Constants.LOADING_KEY + key, key, expire);
@@ -121,36 +59,21 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
         return res == Constants.RESULT_FAILURE;
     }
 
-    /**
-     * 判断缓存的绝对过期时间是否过期
-     * @param absoluteExpireTime 缓存绝对过期时间，单位：ms
-     * @return 返回true，则过期，返回false，则未过期
-     */
-    protected boolean isInvalid(long absoluteExpireTime) {
+    @Override
+    public boolean isInvalid(long absoluteExpireTime) {
         //Constants.ABSOLUTE_EXPIRE_TIME 为了兼容没有编码过的数据，实际过期时间由expire设置
         return absoluteExpireTime != Constants.ABSOLUTE_EXPIRE_TIME && absoluteExpireTime <= System.currentTimeMillis();
     }
 
-    /**
-     * 获取编码数据
-     * @param expire 过期时间
-     * @param data 编码前的数据
-     * @param codecEnum codecEnum
-     * @return 编码后的数据
-     */
-    private Object getEncodeData(long expire, String data, CodecEnum codecEnum) {
+    @Override
+    public Object getEncodeData(long expire, String data, CodecEnum codecEnum) {
         Codec codec = CodecFactory.getByType(codecEnum);
 
         return codec.encode(expire, data);
     }
 
-    /**
-     * 从编码后的数据中返回解码后的数据
-     * @param data 编码后的数据
-     * @param codecEnum CodecEnum
-     * @return 解码后的数据
-     */
-    protected Object getDecodeData(Object data, CodecEnum codecEnum) {
+    @Override
+    public Object getDecodeData(Object data, CodecEnum codecEnum) {
         Codec codec = CodecFactory.getByType(codecEnum);
 
         return codec.decode(data);

@@ -2,17 +2,12 @@ package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.MapCodec;
-import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
-import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
-import live.xsg.cacheoperator.executor.CacheExecutor;
-import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.loader.PropertiesResourceLoader;
 import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.transport.redis.RedisTransporter;
-import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -24,7 +19,7 @@ import java.util.concurrent.Executor;
  * redis缓存操作器
  * Created by xsg on 2020/7/20.
  */
-public class RedisCacheOperator implements CacheOperator {
+public class RedisCacheOperator extends AbstractCacheOperator implements CacheOperator {
 
     private CacheOperator cacheOperatorProxy;
 
@@ -41,6 +36,7 @@ public class RedisCacheOperator implements CacheOperator {
     }
 
     public RedisCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
+        super(transporter, resourceLoader);
         this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator(transporter, resourceLoader));
     }
 
@@ -120,56 +116,22 @@ public class RedisCacheOperator implements CacheOperator {
 
         @Override
         public String getString(String key, long expire, Refresher<String> flusher) {
-            return this.getString(key, expire, flusher, new SyncCacheExecutor());
+            return this.stringOperator.getString(key, expire, flusher);
         }
 
         @Override
         public String getStringAsync(String key, long expire, Refresher<String> flusher) {
-            return this.getString(key, expire, flusher, this.asyncCacheExecutor);
+            return this.stringOperator.getStringAsync(key, expire, flusher);
         }
 
         @Override
         public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
-            return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor));
-        }
-
-        private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor cacheExecutor) {
-            String res = this.transporter.getString(key);
-
-            if (StringUtils.isBlank(res)) {
-                //缓存中不存在数据，获取数据，放入缓存
-                res = (String) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
-            } else {
-                //缓存中存在数据，判断缓存是否已经过期
-                StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
-                boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
-
-                if (invalid) {
-                    //缓存过期，刷新缓存
-                    res = (String) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
-                    //如果有其他线程在刷新缓存，则返回现在缓存中的值
-                    if (Constants.EMPTY_STRING.equals(res) && stringData.getData() != null) {
-                        res = stringData.getData();
-                    }
-                } else {
-                    //未过期
-                    res = stringData.getData();
-                }
-            }
-            return res;
+            return this.stringOperator.getStringAsync(key, expire, flusher, executor);
         }
 
         @Override
         public String getString(String key) {
-            String res = this.transporter.getString(key);
-            StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
-            boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
-
-            if (invalid) {
-                //缓存数据过期
-                return Constants.EMPTY_STRING;
-            }
-            return stringData.getData();
+            return this.stringOperator.getString(key);
         }
 
         @Override
