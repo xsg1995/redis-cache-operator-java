@@ -23,7 +23,7 @@ public class RedisStringOperator implements StringOperator {
     //缓存操作
     private CacheOperator cacheOperator;
     //异步任务执行器
-    protected CacheExecutor asyncCacheExecutor = new AsyncCacheExecutor();
+    protected CacheExecutor<String> asyncCacheExecutor = new AsyncCacheExecutor<>();
 
     public RedisStringOperator(Transporter transporter, CacheOperator cacheOperator) {
         this.transporter = transporter;
@@ -45,7 +45,7 @@ public class RedisStringOperator implements StringOperator {
 
     @Override
     public String getString(String key, long expire, Refresher<String> flusher) {
-        return this.getString(key, expire, flusher, new SyncCacheExecutor());
+        return this.getString(key, expire, flusher, new SyncCacheExecutor<String>());
     }
 
     @Override
@@ -55,15 +55,15 @@ public class RedisStringOperator implements StringOperator {
 
     @Override
     public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
-        return this.getString(key, expire, flusher, new AsyncCacheExecutor(executor));
+        return this.getString(key, expire, flusher, new AsyncCacheExecutor<>(executor));
     }
 
-    private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor cacheExecutor) {
+    private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor<String> cacheExecutor) {
         String res = this.transporter.getString(key);
 
         if (StringUtils.isBlank(res)) {
             //缓存中不存在数据，获取数据，放入缓存
-            res = (String) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
+            res = cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
         } else {
             //缓存中存在数据，判断缓存是否已经过期
             StringCodec.StringData stringData = (StringCodec.StringData) this.cacheOperator.getDecodeData(res, CodecEnum.STRING);
@@ -71,9 +71,9 @@ public class RedisStringOperator implements StringOperator {
 
             if (invalid) {
                 //缓存过期，刷新缓存
-                res = (String) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
+                res = cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
                 //如果有其他线程在刷新缓存，则返回现在缓存中的值
-                if (Constants.EMPTY_STRING.equals(res) && stringData.getData() != null) {
+                if (Constants.EMPTY_STRING.equals(res)) {
                     res = stringData.getData();
                 }
             } else {
@@ -114,13 +114,13 @@ public class RedisStringOperator implements StringOperator {
 
             String data = flusher.refresh();
 
-            if (StringUtils.isBlank(data)) {
-                data = Constants.EMPTY_STRING;
-            }
-
             long newExpire = this.cacheOperator.getExtendExpire(expire);
             String encode = (String) this.cacheOperator.getEncodeData(expire, data, CodecEnum.STRING);
             this.transporter.set(key, newExpire, encode);
+
+            if (StringUtils.isBlank(data)) {
+                data = Constants.EMPTY_STRING;
+            }
 
             return data;
         } finally {

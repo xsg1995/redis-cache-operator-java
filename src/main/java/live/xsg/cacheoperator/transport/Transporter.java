@@ -45,9 +45,24 @@ public interface Transporter {
     void incr(String key);
 
     /**
+     * 设置key的过期时间
+     * @param key key
+     * @param expire 过期时间
+     */
+    void pexpire(String key, long expire);
+
+    /**
      * 根据 key 获取 map 类型的值
      * @param key key
      * @return value
      */
     Map<String, String> getAllMap(String key);
+
+    /**
+     * 设置map
+     * @param key key
+     * @param expire 过期时间，单位: ms
+     * @param data data
+     */
+    void hset(String key, long expire, Map<String, String> data);
 }

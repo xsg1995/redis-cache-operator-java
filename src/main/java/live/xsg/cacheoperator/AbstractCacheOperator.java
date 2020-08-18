@@ -27,6 +27,8 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     protected Transporter transporter;
     //string类型操作接口
     protected StringOperator stringOperator;
+    //map类型操作接口
+    protected MapOperator mapOperator;
     //过滤器链构造器
     protected FilterChain filterChain = FilterChain.getInstance();
     //失败降级策略
@@ -36,6 +38,7 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
         super(resourceLoader);
         this.transporter = transporter;
         this.stringOperator = new RedisStringOperator(this.transporter, this);
+        this.mapOperator = new RedisMapOperator(this.transporter, this);
         this.loadingKeyExpire = this.resource.getLong(Constants.LOADING_KEY_EXPIRE, DEFAULT_LOADING_KEY_EXPIRE);
         this.extendExpire = this.resource.getLong(Constants.EXTEND_EXPIRE, DEFAULT_EXTEND_EXPIRE);
     }
@@ -66,7 +69,7 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     }
 
     @Override
-    public Object getEncodeData(long expire, String data, CodecEnum codecEnum) {
+    public Object getEncodeData(long expire, Object data, CodecEnum codecEnum) {
         Codec codec = CodecFactory.getByType(codecEnum);
 
         return codec.encode(expire, data);

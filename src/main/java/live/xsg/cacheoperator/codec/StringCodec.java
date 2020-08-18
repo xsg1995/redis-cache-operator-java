@@ -11,6 +11,9 @@ public class StringCodec extends AbstractCodec {
     @Override
     public Object encode(long expire, Object message) {
         String data = (String) message;
+        if (data == null) {
+            data = "";
+        }
         long absoluteExpireTime = this.getAbsolutionExpireTime(expire);
         StringData stringData = new StringData(absoluteExpireTime, data);
         return JSONObject.toJSONString(stringData);
@@ -19,6 +22,10 @@ public class StringCodec extends AbstractCodec {
     @Override
     public Object decode(Object message) {
         String data = (String) message;
+        if (data == null) {
+            data = "";
+        }
+
         StringData stringData;
         try {
             stringData = JSONObject.parseObject(data, StringData.class);
@@ -27,7 +34,7 @@ public class StringCodec extends AbstractCodec {
             stringData = new StringData(Constants.ABSOLUTE_EXPIRE_TIME, data);
         }
         if (stringData == null) {
-            stringData = new StringData(Constants.ABSOLUTE_EXPIRE_TIME, Constants.EMPTY_STRING);
+            stringData = new StringData(Constants.ABSOLUTE_EXPIRE_TIME, data);
         }
         return stringData;
     }

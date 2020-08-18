@@ -2,6 +2,7 @@ package live.xsg.cacheoperator.transport.redis;
 
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.transport.Transporter;
+import live.xsg.cacheoperator.utils.MapUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -64,8 +65,21 @@ public class RedisTransporter implements Transporter {
     }
 
     @Override
+    public void pexpire(String key, long expire) {
+        this.execute(jedis -> jedis.pexpire(key, expire));
+    }
+
+    @Override
     public Map<String, String> getAllMap(String key) {
         return this.execute(jedis -> jedis.hgetAll(key));
+    }
+
+    @Override
+    public void hset(String key, long expire, Map<String, String> data) {
+        if (MapUtils.isEmpty(data)) return;
+
+        data.forEach((k, v) -> this.execute(jedis -> jedis.hset(key, k, v)));
+        this.pexpire(key, expire);
     }
 
     private <T> T execute(JedisExecutor<T> executor) {

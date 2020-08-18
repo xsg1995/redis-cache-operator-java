@@ -1,8 +1,5 @@
 package live.xsg.cacheoperator;
 
-import live.xsg.cacheoperator.codec.CodecEnum;
-import live.xsg.cacheoperator.codec.MapCodec;
-import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.loader.PropertiesResourceLoader;
 import live.xsg.cacheoperator.loader.ResourceLoader;
@@ -72,6 +69,11 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
         return this.cacheOperatorProxy.getAllMap(key);
     }
 
+    @Override
+    public Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher) {
+        return this.cacheOperatorProxy.getAllMap(key, expire, flusher);
+    }
+
     /**
      * 内部类，实现 InvocationHandler，实现代理，控制访问
      */
@@ -136,15 +138,12 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
 
         @Override
         public Map<String, String> getAllMap(String key) {
-            Map<String, String> map = this.transporter.getAllMap(key);
-            MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(map, CodecEnum.MAP);
-            boolean invalid = this.isInvalid(mapData.getAbsoluteExpireTime());
+            return this.mapOperator.getAllMap(key);
+        }
 
-            if (invalid) {
-                return Constants.EMPTY_MAP;
-            }
-
-            return mapData.getData();
+        @Override
+        public Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher) {
+            return this.mapOperator.getAllMap(key, expire, flusher);
         }
     }
 

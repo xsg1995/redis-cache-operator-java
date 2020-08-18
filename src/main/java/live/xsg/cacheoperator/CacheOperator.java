@@ -50,5 +50,5 @@ public interface CacheOperator extends StringOperator, MapOperator {
      * @param codecEnum codecEnum
      * @return 编码后的数据
      */
-    Object getEncodeData(long expire, String data, CodecEnum codecEnum);
+    Object getEncodeData(long expire, Object data, CodecEnum codecEnum);
 }

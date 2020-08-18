@@ -8,7 +8,7 @@ import java.util.concurrent.*;
  * 异步执行任务
  * Created by xsg on 2020/7/30.
  */
-public class AsyncCacheExecutor implements CacheExecutor {
+public class AsyncCacheExecutor<T> implements CacheExecutor<T> {
 
     private Executor executor;
 
@@ -21,8 +21,8 @@ public class AsyncCacheExecutor implements CacheExecutor {
     }
 
     @Override
-    public Object executor(CacheTask task) {
+    public T executor(CacheTask<T> task) {
         executor.execute(task::run);
-        return Constants.EMPTY_STRING;
+        return (T) Constants.EMPTY_STRING;
     }
 }
