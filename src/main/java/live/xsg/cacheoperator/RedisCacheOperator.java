@@ -74,6 +74,11 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
         return this.cacheOperatorProxy.getAllMap(key, expire, flusher);
     }
 
+    @Override
+    public void del(String key) {
+        this.cacheOperatorProxy.del(key);
+    }
+
     /**
      * 内部类，实现 InvocationHandler，实现代理，控制访问
      */
@@ -114,6 +119,11 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
             this.filterChain.postFilter(key, result);
 
             return result;
+        }
+
+        @Override
+        public void del(String key) {
+            this.transporter.del(key);
         }
 
         @Override

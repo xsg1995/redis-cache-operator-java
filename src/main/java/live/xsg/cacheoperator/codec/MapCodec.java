@@ -12,9 +12,12 @@ import java.util.Map;
 public class MapCodec extends AbstractCodec {
     @Override
     public Object encode(long expire, Object message) {
-        Map<String, String> data = (Map<String, String>) message;
-        if (data == null) {
+        HashMap<String, String> inData = (HashMap<String, String>) message;
+        HashMap<String, String> data = null;
+        if (inData == null) {
             data = new HashMap<>();
+        } else {
+            data = (HashMap<String, String>) inData.clone();
         }
 
         long absoluteExpireTime = this.getAbsolutionExpireTime(expire);
@@ -32,6 +35,7 @@ public class MapCodec extends AbstractCodec {
 
         String absoluteExpireTime = data.get(Constants.ABSOLUTE_EXPIRE_TIME_KEY);
         long targetAbsoluteExpireTime = StringUtils.isNotBlank(absoluteExpireTime) ? Long.parseLong(absoluteExpireTime) : Constants.ABSOLUTE_EXPIRE_TIME;
+        data.remove(Constants.ABSOLUTE_EXPIRE_TIME_KEY);
 
         return new MapData(targetAbsoluteExpireTime, data);
     }

@@ -56,8 +56,7 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     @Override
     public boolean isLoading(String key) {
         //设置缓存最长刷新时间为 loadingKeyExpire ，在该时段内，只有一个线程刷新缓存
-        long expire = this.loadingKeyExpire;
-        int res = this.transporter.setIfNotExist(Constants.LOADING_KEY + key, key, expire);
+        int res = this.transporter.setIfNotExist(Constants.LOADING_KEY + key, key, this.loadingKeyExpire);
 
         return res == Constants.RESULT_FAILURE;
     }

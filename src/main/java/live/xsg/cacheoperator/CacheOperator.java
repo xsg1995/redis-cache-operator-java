@@ -9,6 +9,12 @@ import live.xsg.cacheoperator.codec.CodecEnum;
 public interface CacheOperator extends StringOperator, MapOperator {
 
     /**
+     * 删除key
+     * @param key key
+     */
+    void del(String key);
+
+    /**
      * 设置key对应的数据正在加载，如果没有其他线程在刷新数据，则当前线程进行刷新
      * @param key key
      * @return 返回true，则说明已有其他线程正在刷新，返回false，则表示没有其他线程在刷新

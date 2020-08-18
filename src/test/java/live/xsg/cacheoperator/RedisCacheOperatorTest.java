@@ -4,10 +4,9 @@ import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.filter.Filter;
 import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.mock.MockRegister;
-import live.xsg.cacheoperator.transport.Transporter;
-import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 import org.testng.annotations.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -21,8 +20,6 @@ public class RedisCacheOperatorTest {
 
     public static long EXPIRE = 10 * 60 * 1000;  //10 分钟
 
-    private Transporter transporter = new RedisTransporter();
-
     @Test
     public void getString_with_fluster_test() {
         String key = "sayHello";
@@ -35,7 +32,7 @@ public class RedisCacheOperatorTest {
             return sourceValue;
         });
 
-        transporter.del(key);
+        cacheOperator.del(key);
         assertEquals(sourceValue, cacheValue);
     }
 
@@ -57,7 +54,7 @@ public class RedisCacheOperatorTest {
         cacheValue = cacheOperator.getString(key);
         assertEquals(cacheValue, sourceValue);
 
-        transporter.del(key);
+        cacheOperator.del(key);
     }
 
     @Test
@@ -124,7 +121,21 @@ public class RedisCacheOperatorTest {
         String mapKey = "mapKey";
         CacheOperator cacheOperator = new RedisCacheOperator();
         Map<String, String> resMap = cacheOperator.getAllMap(mapKey);
-        System.out.println(resMap);
+        assertEquals(resMap, Constants.EMPTY_MAP);
+    }
+
+    @Test
+    public void getAllMap_with_fluster_test() {
+        String mapKey = "mapKey";
+        Map<String, String> mockData = new HashMap<>();
+        mockData.put("value", "mapValue");
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+        Map<String, String> res = cacheOperator.getAllMap(mapKey, EXPIRE, () -> mockData);
+
+        assertEquals(res, mockData);
+
+        cacheOperator.del(mapKey);
     }
 
     private void sleep(int second) {
