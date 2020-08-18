@@ -19,22 +19,33 @@
 
 ## 使用
 ### 字符串对象
-* 当缓存中存在key为sayHello的值时，则返回缓存中的值；
-* 当缓存中不存在key为sayHello的值时，将调用Refresher执行业务逻辑，获取具体的值填充到缓存中并返回；
 ```java
+CacheOperator cacheOperator = new RedisCacheOperator();
 String key = "sayHello";
-String sourceValue = "hello world!";
 long expire = 10 * 60 * 1000;  //10 分钟
 
-CacheOperator cacheOperator = new RedisCacheOperator();
 String cacheValue = cacheOperator.getString(key, expire, () -> {
     //执行业务逻辑，获取值
-    return sourceValue;
+    String value = "hello world!";
+    return value;
+});
+```
+### map对象
+```java
+CacheOperator cacheOperator = new RedisCacheOperator();
+
+String mapKey = "mapKey";
+long expire = 10 * 60 * 1000;  //10 分钟
+Map<String, String> res = cacheOperator.getAllMap(mapKey, expire, () -> {
+    //执行业务逻辑，获取值
+    Map<String, String> data = new HashMap<>();
+    data.put("value", "mapValue");
+    return data;
 });
 ```
 ### mock降级使用
-* 使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加Mock实现类
-* 代码注入mock降级逻辑
+* 方式一：使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加Mock实现类
+* 方式二：代码注入mock降级逻辑
 ```java
 String key = "sayHello";
 
@@ -47,8 +58,8 @@ MockRegister.getInstance().register((k, cacheOperator, method) -> {
 ```
 
 ### filter过滤器使用
-* 使用SPI，则在META-INF/services/live.xsg.cacheoperator.filter.Filter文件中添加Filter实现类
-* 代码注入filter实现逻辑
+* 方式一：使用SPI，则在META-INF/services/live.xsg.cacheoperator.filter.Filter文件中添加Filter实现类
+* 方式二：代码注入filter实现逻辑
 ```java
 String ignoreKey = "ignoreKey";
 FilterChain.getInstance().addFilter(new Filter() {
