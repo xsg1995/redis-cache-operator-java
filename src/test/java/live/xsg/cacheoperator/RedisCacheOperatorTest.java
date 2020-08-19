@@ -1,6 +1,7 @@
 package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.context.RedisCacheContext;
 import live.xsg.cacheoperator.filter.Filter;
 import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.mock.MockRegister;
@@ -8,6 +9,8 @@ import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
@@ -37,7 +40,7 @@ public class RedisCacheOperatorTest {
     }
 
     @Test
-    public void getStringAsync_with_fluster_test() {
+    public void getStringAsync_with_fluster_test() throws ExecutionException, InterruptedException {
         String key = "sayHello";
         String sourceValue = "hello world!";
         long expire = 10 * 60 * 1000;  //10 分钟
@@ -49,10 +52,10 @@ public class RedisCacheOperatorTest {
         });
 
         assertEquals(cacheValue, Constants.EMPTY_STRING);
-        sleep(2);
 
-        cacheValue = cacheOperator.getString(key);
-        assertEquals(cacheValue, sourceValue);
+        Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
+        String result = resultFuture.get();
+        assertEquals(result, sourceValue);
 
         cacheOperator.del(key);
     }
@@ -133,6 +136,24 @@ public class RedisCacheOperatorTest {
         CacheOperator cacheOperator = new RedisCacheOperator();
         Map<String, String> res = cacheOperator.getAllMap(mapKey, EXPIRE, () -> mockData);
 
+        assertEquals(res, mockData);
+
+        cacheOperator.del(mapKey);
+    }
+
+    @Test
+    public void getAllMapAsync_with_fluster_test() throws ExecutionException, InterruptedException {
+        String mapKey = "mapKey";
+        Map<String, String> mockData = new HashMap<>();
+        mockData.put("value", "mapValue");
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+        Map<String, String> res = cacheOperator.getAllMapAsync(mapKey, EXPIRE, () -> mockData);
+
+        assertEquals(res, Constants.EMPTY_MAP);
+
+        Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture();
+        res = future.get();
         assertEquals(res, mockData);
 
         cacheOperator.del(mapKey);

@@ -10,7 +10,7 @@ import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * string类型操作实现
@@ -23,7 +23,7 @@ public class RedisStringOperator implements StringOperator {
     //缓存操作
     private CacheOperator cacheOperator;
     //异步任务执行器
-    protected CacheExecutor<String> asyncCacheExecutor = new AsyncCacheExecutor<>();
+    protected CacheExecutor<String> asyncCacheExecutor = new AsyncCacheExecutor();
 
     public RedisStringOperator(Transporter transporter, CacheOperator cacheOperator) {
         this.transporter = transporter;
@@ -45,7 +45,7 @@ public class RedisStringOperator implements StringOperator {
 
     @Override
     public String getString(String key, long expire, Refresher<String> flusher) {
-        return this.getString(key, expire, flusher, new SyncCacheExecutor<String>());
+        return this.getString(key, expire, flusher, new SyncCacheExecutor<>());
     }
 
     @Override
@@ -54,8 +54,8 @@ public class RedisStringOperator implements StringOperator {
     }
 
     @Override
-    public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
-        return this.getString(key, expire, flusher, new AsyncCacheExecutor<>(executor));
+    public String getStringAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
+        return this.getString(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
     }
 
     private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor<String> cacheExecutor) {
@@ -80,6 +80,9 @@ public class RedisStringOperator implements StringOperator {
                 //未过期
                 res = stringData.getData();
             }
+        }
+        if (res == null) {
+            res = Constants.EMPTY_STRING;
         }
         return res;
     }

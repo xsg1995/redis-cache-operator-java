@@ -1,8 +1,10 @@
 package live.xsg.cacheoperator.executor;
 
-import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.context.RedisCacheContext;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * 异步执行任务
@@ -10,19 +12,27 @@ import java.util.concurrent.*;
  */
 public class AsyncCacheExecutor<T> implements CacheExecutor<T> {
 
-    private Executor executor;
+    private ExecutorService executorService = ExecutorUtils.getExecutorService();
 
     public AsyncCacheExecutor() {
-        this(Executors.newCachedThreadPool());
     }
 
-    public AsyncCacheExecutor(Executor executor) {
-        this.executor = executor;
+    public AsyncCacheExecutor(ExecutorService executorService) {
+        this.executorService = executorService;
     }
 
     @Override
     public T executor(CacheTask<T> task) {
-        executor.execute(task::run);
-        return (T) Constants.EMPTY_STRING;
+        Future<T> future = executorService.submit(task::run);
+        RedisCacheContext.getContext().setFuture(future);
+        return null;
+    }
+
+    static class ExecutorUtils {
+        private static ExecutorService executorService = Executors.newCachedThreadPool();
+
+        public static ExecutorService getExecutorService() {
+            return executorService;
+        }
     }
 }

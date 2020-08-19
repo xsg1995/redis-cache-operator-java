@@ -10,7 +10,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Map;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * redis缓存操作器
@@ -55,8 +55,8 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
     }
 
     @Override
-    public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
-        return this.cacheOperatorProxy.getStringAsync(key, expire, flusher, executor);
+    public String getStringAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
+        return this.cacheOperatorProxy.getStringAsync(key, expire, flusher, executorService);
     }
 
     @Override
@@ -72,6 +72,16 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
     @Override
     public Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher) {
         return this.cacheOperatorProxy.getAllMap(key, expire, flusher);
+    }
+
+    @Override
+    public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
+        return this.cacheOperatorProxy.getAllMapAsync(key, expire, flusher);
+    }
+
+    @Override
+    public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
+        return this.cacheOperatorProxy.getAllMapAsync(key, expire, flusher, executorService);
     }
 
     @Override
@@ -137,8 +147,8 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
         }
 
         @Override
-        public String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor) {
-            return this.stringOperator.getStringAsync(key, expire, flusher, executor);
+        public String getStringAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
+            return this.stringOperator.getStringAsync(key, expire, flusher, executorService);
         }
 
         @Override
@@ -154,6 +164,16 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
         @Override
         public Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher) {
             return this.mapOperator.getAllMap(key, expire, flusher);
+        }
+
+        @Override
+        public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
+            return this.mapOperator.getAllMapAsync(key, expire, flusher);
+        }
+
+        @Override
+        public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
+            return this.mapOperator.getAllMapAsync(key, expire, flusher, executorService);
         }
     }
 

@@ -2,7 +2,7 @@ package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.flusher.Refresher;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * string类型操作接口
@@ -38,6 +38,7 @@ public interface StringOperator {
      * 如果当前没有其他线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回""或者缓存中的旧数据
      * 如果当前已经有其他现在在刷新缓存，则当前线程返回""或者缓存中的旧数据
      * 使用 Executor executor = Executors.newCachedThreadPool()
+     * Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
      * @param key key
      * @param expire 缓存过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
@@ -51,11 +52,12 @@ public interface StringOperator {
      * 控制只有一个线程可以刷新缓存
      * 如果当前没有其他线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回""或者缓存中的旧数据
      * 如果当前已经有其他现在在刷新缓存，则当前线程返回""或者缓存中的旧数据
+     * Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
      * @param key key
      * @param expire 缓存过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
-     * @param executor 指定以线程池实现
+     * @param executorService 指定以线程池实现
      * @return 返回缓存中的数据
      */
-    String getStringAsync(String key, long expire, Refresher<String> flusher, Executor executor);
+    String getStringAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService);
 }

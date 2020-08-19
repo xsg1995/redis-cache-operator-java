@@ -19,6 +19,7 @@
 
 ## 使用
 ### 字符串对象
+* 同步刷新缓存
 ```java
 CacheOperator cacheOperator = new RedisCacheOperator();
 String key = "sayHello";
@@ -30,7 +31,26 @@ String cacheValue = cacheOperator.getString(key, expire, () -> {
     return value;
 });
 ```
+* 异步刷新缓存
+```java
+String key = "sayHello";
+String sourceValue = "hello world!";
+long expire = 10 * 60 * 1000;  //10 分钟
+
+CacheOperator cacheOperator = new RedisCacheOperator();
+String cacheValue = cacheOperator.getStringAsync(key, expire, () -> {
+    //执行业务逻辑，获取值
+    return sourceValue;
+});
+//System.out.println(cacheValue);  结果为 ""
+
+//获取future对象
+Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
+String result = resultFuture.get();
+//System.out.println(result);  获取到异步刷新的结果
+```
 ### map对象
+* 同步刷新缓存
 ```java
 CacheOperator cacheOperator = new RedisCacheOperator();
 
@@ -42,6 +62,21 @@ Map<String, String> res = cacheOperator.getAllMap(mapKey, expire, () -> {
     data.put("value", "mapValue");
     return data;
 });
+```
+* 异步刷新缓存
+```java
+String mapKey = "mapKey";
+Map<String, String> mockData = new HashMap<>();
+mockData.put("value", "mapValue");
+
+CacheOperator cacheOperator = new RedisCacheOperator();
+Map<String, String> res = cacheOperator.getAllMapAsync(mapKey, EXPIRE, () -> mockData);
+//System.out.println(cacheValue);  结果为空的HashMap
+
+//获取future对象
+Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture();
+Map<String, String> result = future.get();
+//System.out.println(result);  获取到异步刷新的结果
 ```
 ### mock降级使用
 * 方式一：使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加Mock实现类

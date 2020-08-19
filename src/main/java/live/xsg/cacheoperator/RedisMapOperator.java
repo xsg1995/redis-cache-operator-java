@@ -3,12 +3,16 @@ package live.xsg.cacheoperator;
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.MapCodec;
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
+import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.utils.MapUtils;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 /**
  * map类型操作实现
@@ -19,6 +23,8 @@ public class RedisMapOperator implements MapOperator {
     private Transporter transporter;
     //缓存操作
     private CacheOperator cacheOperator;
+    //异步任务执行器
+    protected CacheExecutor<Map<String, String>> asyncCacheExecutor = new AsyncCacheExecutor();
 
     public RedisMapOperator(Transporter transporter, CacheOperator cacheOperator) {
         this.transporter = transporter;
@@ -43,7 +49,17 @@ public class RedisMapOperator implements MapOperator {
         return this.getAllMap(key, expire, flusher, new SyncCacheExecutor<>());
     }
 
-    private Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher, SyncCacheExecutor<Map<String, String>> cacheExecutor) {
+    @Override
+    public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
+        return this.getAllMap(key, expire, flusher, this.asyncCacheExecutor);
+    }
+
+    @Override
+    public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
+        return this.getAllMap(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
+    }
+
+    private Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher, CacheExecutor<Map<String, String>> cacheExecutor) {
         Map<String, String> resMap = this.transporter.getAllMap(key);
 
         if (MapUtils.isEmpty(resMap)) {
@@ -66,6 +82,9 @@ public class RedisMapOperator implements MapOperator {
                 //未过期
                 resMap = mapData.getData();
             }
+        }
+        if (resMap == null) {
+            resMap = new HashMap<>();
         }
         return resMap;
     }
