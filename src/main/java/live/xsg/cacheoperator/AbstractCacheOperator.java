@@ -1,9 +1,15 @@
 package live.xsg.cacheoperator;
 
+import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.codec.Codec;
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.CodecFactory;
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.context.RedisCacheContext;
+import live.xsg.cacheoperator.core.MapOperator;
+import live.xsg.cacheoperator.core.RedisMapOperator;
+import live.xsg.cacheoperator.core.RedisStringOperator;
+import live.xsg.cacheoperator.core.StringOperator;
 import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.resource.DefaultResourceRegister;
@@ -79,5 +85,12 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
         Codec codec = CodecFactory.getByType(codecEnum);
 
         return codec.decode(data);
+    }
+
+    /**
+     * 预处理操作
+     */
+    protected void preProcess() {
+        RedisCacheContext.getContext().setFuture(null);
     }
 }

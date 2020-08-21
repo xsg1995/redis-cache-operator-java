@@ -1,6 +1,8 @@
 package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.codec.CodecEnum;
+import live.xsg.cacheoperator.core.MapOperator;
+import live.xsg.cacheoperator.core.StringOperator;
 
 /**
  * 缓存操作器

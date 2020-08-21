@@ -1,6 +1,7 @@
 package live.xsg.cacheoperator.filter;
 
 import live.xsg.cacheoperator.extension.ExtensionLoader;
+import live.xsg.cacheoperator.support.OrderComparator;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -63,5 +64,12 @@ public class FilterChain {
 
     public void addFilter(Filter filter) {
         this.filters.add(filter);
+    }
+
+    /**
+     * 对filter进行排序
+     */
+    private void sort() {
+        OrderComparator.sort(this.filters);
     }
 }

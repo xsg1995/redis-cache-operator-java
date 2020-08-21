@@ -100,6 +100,9 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            //预处理操作
+            this.preProcess();
+
             String methodName = method.getName();
             Class<?>[] parameterTypes = method.getParameterTypes();
 

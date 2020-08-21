@@ -46,9 +46,12 @@ String cacheValue = cacheOperator.getStringAsync(key, expire, () -> {
 
 //获取future对象
 Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
-String result = resultFuture.get();
-//System.out.println(result);  获取到异步刷新的结果
+if (resultFuture != null) {
+    //获取到异步刷新的结果
+    String result = resultFuture.get();
+}
 ```
+> 当缓存中无数据或者缓存中的数据没有过期时，通过RedisCacheContext.getContext().getFuture()获取到future将为null
 ### map对象
 * 同步刷新缓存
 ```java
@@ -75,9 +78,12 @@ Map<String, String> res = cacheOperator.getAllMapAsync(mapKey, EXPIRE, () -> moc
 
 //获取future对象
 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture();
-Map<String, String> result = future.get();
-//System.out.println(result);  获取到异步刷新的结果
+if (future != null) {
+    //获取到异步刷新的结果
+    Map<String, String> result = future.get(); 
+}
 ```
+> 当缓存中无数据或者缓存中的数据没有过期时，通过RedisCacheContext.getContext().getFuture()获取到future将为null
 ### mock降级使用
 * 方式一：使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加Mock实现类
 * 方式二：代码注入mock降级逻辑
@@ -91,7 +97,7 @@ MockRegister.getInstance().register((k, cacheOperator, method) -> {
     return null;
 });
 ```
-
+> Mock实现类可以实现Order接口指定调用顺序
 ### filter过滤器使用
 * 方式一：使用SPI，则在META-INF/services/live.xsg.cacheoperator.filter.Filter文件中添加Filter实现类
 * 方式二：代码注入filter实现逻辑
@@ -112,3 +118,4 @@ FilterChain.getInstance().addFilter(new Filter() {
     }
 });
 ```
+> Filter实现类可以实现Order接口指定调用顺序

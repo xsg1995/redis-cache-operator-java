@@ -1,6 +1,7 @@
 package live.xsg.cacheoperator.mock;
 
 import live.xsg.cacheoperator.extension.ExtensionLoader;
+import live.xsg.cacheoperator.support.OrderComparator;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -47,5 +48,12 @@ public class MockRegister {
     public Iterator<Mock> getMockCacheOperators() {
         List<Mock> cacheOperators = Collections.unmodifiableList(this.mocks);
         return cacheOperators.iterator();
+    }
+
+    /**
+     * 对Mock进行排序
+     */
+    private void sort() {
+        OrderComparator.sort(this.mocks);
     }
 }

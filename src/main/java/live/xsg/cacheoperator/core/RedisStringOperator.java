@@ -1,5 +1,6 @@
-package live.xsg.cacheoperator;
+package live.xsg.cacheoperator.core;
 
+import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;

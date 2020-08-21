@@ -1,4 +1,4 @@
-package live.xsg.cacheoperator;
+package live.xsg.cacheoperator.core;
 
 import live.xsg.cacheoperator.flusher.Refresher;
 
