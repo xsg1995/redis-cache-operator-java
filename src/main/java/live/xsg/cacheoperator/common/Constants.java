@@ -44,4 +44,7 @@ public class Constants {
 
     //redis异常重试频率
     public static String RETRY_PERIOD = "retryPeriod";
+
+    //线程阻塞时间
+    public static String BLOCK_TIME = "blockTime";
 }

@@ -8,6 +8,7 @@ import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
+import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.utils.MapUtils;
 
@@ -19,24 +20,19 @@ import java.util.concurrent.ExecutorService;
  * map类型操作实现
  * Created by xsg on 2020/8/18.
  */
-public class RedisMapOperator implements MapOperator {
-    //服务器交互接口 RedisTransporter
-    private Transporter transporter;
-    //缓存操作
-    private CacheOperator cacheOperator;
+public class RedisMapOperator extends AbstractRedisOperator implements MapOperator {
     //异步任务执行器
     protected CacheExecutor<Map<String, String>> asyncCacheExecutor = new AsyncCacheExecutor();
 
-    public RedisMapOperator(Transporter transporter, CacheOperator cacheOperator) {
-        this.transporter = transporter;
-        this.cacheOperator = cacheOperator;
+    public RedisMapOperator(Transporter transporter, CacheOperator cacheOperator, ResourceLoader resourceLoader) {
+        super(transporter, cacheOperator, resourceLoader);
     }
 
     @Override
     public Map<String, String> getAllMap(String key) {
         Map<String, String> map = this.transporter.getAllMap(key);
-        MapCodec.MapData mapData = (MapCodec.MapData) this.cacheOperator.getDecodeData(map, CodecEnum.MAP);
-        boolean invalid = this.cacheOperator.isInvalid(mapData.getAbsoluteExpireTime());
+        MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(map, CodecEnum.MAP);
+        boolean invalid = this.isInvalid(mapData.getAbsoluteExpireTime());
 
         if (invalid) {
             return Constants.EMPTY_MAP;
@@ -68,8 +64,8 @@ public class RedisMapOperator implements MapOperator {
             resMap = cacheExecutor.executor(() -> this.doFillMapCache(key, expire, flusher));
         } else {
             //缓存中存在数据，则判断缓存是否已经过期
-            MapCodec.MapData mapData = (MapCodec.MapData) this.cacheOperator.getDecodeData(resMap, CodecEnum.MAP);
-            boolean invalid = this.cacheOperator.isInvalid(mapData.getAbsoluteExpireTime());
+            MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(resMap, CodecEnum.MAP);
+            boolean invalid = this.isInvalid(mapData.getAbsoluteExpireTime());
 
             if (invalid) {
                 //缓存过期，则刷新缓存数据
@@ -97,31 +93,20 @@ public class RedisMapOperator implements MapOperator {
      * @param flusher 获取缓存数据
      * @return 返回最新数据
      */
+    @SuppressWarnings("unchecked")
     private Map<String, String> doFillMapCache(String key, long expire, Refresher<Map<String, String>> flusher) {
         boolean isLoading = false;
         try {
-            isLoading = this.cacheOperator.isLoading(key);
+            isLoading = this.isLoading(key);
             //isLoading=true，则已有其他线程在刷新数据
             if (isLoading) {
-                return Constants.EMPTY_MAP;
-            }
-
-            //检查是否已经有其他线程刷新完缓存
-            Map<String, String> cacheMap = this.transporter.getAllMap(key);
-            if (!MapUtils.isEmpty(cacheMap)) {
-                MapCodec.MapData mapData = (MapCodec.MapData) this.cacheOperator.getDecodeData(cacheMap, CodecEnum.MAP);
-                boolean invalid = this.cacheOperator.isInvalid(mapData.getAbsoluteExpireTime());
-
-                if (!invalid) {
-                    //没有过期，已有其他线程刷新了缓存，返回缓存数据
-                    return mapData.getData();
-                }
+                return (Map<String, String>) this.blockIfNeed(key);
             }
 
             Map<String, String> data = flusher.refresh();
 
-            long newExpire = this.cacheOperator.getExtendExpire(expire);
-            MapCodec.MapData encodeMap = (MapCodec.MapData) this.cacheOperator.getEncodeData(expire, data, CodecEnum.MAP);
+            long newExpire = this.getExtendExpire(expire);
+            MapCodec.MapData encodeMap = (MapCodec.MapData) this.getEncodeData(expire, data, CodecEnum.MAP);
             this.transporter.hset(key, newExpire, encodeMap.getData());
 
             if (MapUtils.isEmpty(data)) {
@@ -132,8 +117,18 @@ public class RedisMapOperator implements MapOperator {
         } finally {
             if (!isLoading) {
                 //设置key已经加载完毕
-                this.cacheOperator.loadFinish(key);
+                this.loadFinish(key);
             }
         }
+    }
+
+    @Override
+    protected Object getDataIgnoreValid(String key) {
+        //检查是否已经有其他线程刷新完缓存
+        Map<String, String> cacheMap = this.transporter.getAllMap(key);
+        if (MapUtils.isEmpty(cacheMap)) return null;
+
+        MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(cacheMap, CodecEnum.MAP);
+        return mapData.getData();
     }
 }

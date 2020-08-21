@@ -8,6 +8,7 @@ import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
+import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -17,25 +18,20 @@ import java.util.concurrent.ExecutorService;
  * string类型操作实现
  * Created by xsg on 2020/8/17.
  */
-public class RedisStringOperator implements StringOperator {
+public class RedisStringOperator extends AbstractRedisOperator implements StringOperator {
 
-    //服务器交互接口 RedisTransporter
-    private Transporter transporter;
-    //缓存操作
-    private CacheOperator cacheOperator;
     //异步任务执行器
     protected CacheExecutor<String> asyncCacheExecutor = new AsyncCacheExecutor();
 
-    public RedisStringOperator(Transporter transporter, CacheOperator cacheOperator) {
-        this.transporter = transporter;
-        this.cacheOperator = cacheOperator;
+    public RedisStringOperator(Transporter transporter, CacheOperator cacheOperator, ResourceLoader resourceLoader) {
+        super(transporter, cacheOperator, resourceLoader);
     }
 
     @Override
     public String getString(String key) {
         String res = this.transporter.getString(key);
-        StringCodec.StringData stringData = (StringCodec.StringData) this.cacheOperator.getDecodeData(res, CodecEnum.STRING);
-        boolean invalid = this.cacheOperator.isInvalid(stringData.getAbsoluteExpireTime());
+        StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
+        boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
 
         if (invalid) {
             //缓存数据过期
@@ -67,8 +63,8 @@ public class RedisStringOperator implements StringOperator {
             res = cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
         } else {
             //缓存中存在数据，判断缓存是否已经过期
-            StringCodec.StringData stringData = (StringCodec.StringData) this.cacheOperator.getDecodeData(res, CodecEnum.STRING);
-            boolean invalid = this.cacheOperator.isInvalid(stringData.getAbsoluteExpireTime());
+            StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
+            boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
 
             if (invalid) {
                 //缓存过期，刷新缓存
@@ -99,27 +95,16 @@ public class RedisStringOperator implements StringOperator {
         boolean isLoading = false;
         try {
             //设置正在加载key对应的数据
-            isLoading = this.cacheOperator.isLoading(key);
+            isLoading = this.isLoading(key);
             //isLoading=true，则已有其他线程在刷新数据
             if (isLoading) {
-                return Constants.EMPTY_STRING;
-            }
-
-            //检查是否已经有其他线程刷新完缓存
-            String res = this.transporter.getString(key);
-            if (StringUtils.isNotBlank(res)) {
-                StringCodec.StringData stringData = (StringCodec.StringData) this.cacheOperator.getDecodeData(res, CodecEnum.STRING);
-                boolean invalid = this.cacheOperator.isInvalid(stringData.getAbsoluteExpireTime());
-                if (!invalid) {
-                    //没有过期，已有其他线程刷新了缓存，返回缓存数据
-                    return stringData.getData();
-                }
+                return (String) this.blockIfNeed(key);
             }
 
             String data = flusher.refresh();
 
-            long newExpire = this.cacheOperator.getExtendExpire(expire);
-            String encode = (String) this.cacheOperator.getEncodeData(expire, data, CodecEnum.STRING);
+            long newExpire = this.getExtendExpire(expire);
+            String encode = (String) this.getEncodeData(expire, data, CodecEnum.STRING);
             this.transporter.set(key, newExpire, encode);
 
             if (StringUtils.isBlank(data)) {
@@ -130,8 +115,19 @@ public class RedisStringOperator implements StringOperator {
         } finally {
             if (!isLoading) {
                 //设置key已经加载完毕
-                this.cacheOperator.loadFinish(key);
+                this.loadFinish(key);
             }
         }
     }
+
+    @Override
+    protected String getDataIgnoreValid(String key) {
+        String res = this.transporter.getString(key);
+        if (StringUtils.isBlank(res)) return null;
+
+        StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
+        return stringData.getData();
+    }
+
+
 }

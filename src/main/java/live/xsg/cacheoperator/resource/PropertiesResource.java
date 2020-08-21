@@ -18,8 +18,7 @@ public class PropertiesResource implements Resource {
     public String getString(String key, String defaultVal) {
         try {
             return this.properties.getProperty(key);
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable ignored) {
         }
         return defaultVal;
     }
@@ -28,8 +27,7 @@ public class PropertiesResource implements Resource {
     public Integer getInt(String key, int defaultVal) {
         try {
             return Integer.parseInt(this.properties.getProperty(key));
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable ignored) {
         }
         return defaultVal;
     }
@@ -38,8 +36,7 @@ public class PropertiesResource implements Resource {
     public Long getLong(String key, long defaultVal) {
         try {
             return Long.parseLong(this.properties.getProperty(key));
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable ignored) {
         }
         return defaultVal;
     }
