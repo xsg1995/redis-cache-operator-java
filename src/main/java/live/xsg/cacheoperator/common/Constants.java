@@ -24,11 +24,11 @@ public class Constants {
     //服务端返回 2
     public static int RESULT_FAILURE = 0;
 
-    //缓存最大过期时间常量，用于标识作用
-    public static long ABSOLUTE_EXPIRE_TIME = -1L;
+    //缓存时间过期时间常量，标识没有过期时间的数据
+    public static long ACTUAL_EXPIRE_TIME = -1L;
 
     //过期时间标识key
-    public static String ABSOLUTE_EXPIRE_TIME_KEY = "absoluteExpireTimeKey";
+    public static String ACTUAL_EXPIRE_TIME_KEY = "actualExpireTimeKey";
 
     //返回ok
     public static String OK = "OK";

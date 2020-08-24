@@ -14,8 +14,8 @@ public class StringCodec extends AbstractCodec {
         if (data == null) {
             data = "";
         }
-        long absoluteExpireTime = this.getAbsolutionExpireTime(expire);
-        StringData stringData = new StringData(absoluteExpireTime, data);
+        long actualExpireTime = this.getActualExpireTime(expire);
+        StringData stringData = new StringData(actualExpireTime, data);
         return JSONObject.toJSONString(stringData);
     }
 
@@ -23,7 +23,7 @@ public class StringCodec extends AbstractCodec {
     public Object decode(Object message) {
         String data = (String) message;
         if (data == null) {
-            data = "";
+            return new StringData(Constants.ACTUAL_EXPIRE_TIME, Constants.EMPTY_STRING);
         }
 
         StringData stringData;
@@ -31,31 +31,31 @@ public class StringCodec extends AbstractCodec {
             stringData = JSONObject.parseObject(data, StringData.class);
         } catch (Exception e) {
             //兼容非 encode 处理过的数据
-            stringData = new StringData(Constants.ABSOLUTE_EXPIRE_TIME, data);
+            stringData = new StringData(Constants.ACTUAL_EXPIRE_TIME, data);
         }
         if (stringData == null) {
-            stringData = new StringData(Constants.ABSOLUTE_EXPIRE_TIME, data);
+            stringData = new StringData(Constants.ACTUAL_EXPIRE_TIME, data);
         }
         return stringData;
     }
 
     public static class StringData {
         //失效日期
-        long absoluteExpireTime;
+        long actualExpireTime;
         //实际数据
         String data;
 
-        public StringData(long absoluteExpireTime, String data) {
-            this.absoluteExpireTime = absoluteExpireTime;
+        public StringData(long actualExpireTime, String data) {
+            this.actualExpireTime = actualExpireTime;
             this.data = data;
         }
 
-        public long getAbsoluteExpireTime() {
-            return absoluteExpireTime;
+        public long getActualExpireTime() {
+            return actualExpireTime;
         }
 
-        public void setAbsoluteExpireTime(long absoluteExpireTime) {
-            this.absoluteExpireTime = absoluteExpireTime;
+        public void setActualExpireTime(long actualExpireTime) {
+            this.actualExpireTime = actualExpireTime;
         }
 
         public String getData() {
@@ -69,16 +69,16 @@ public class StringCodec extends AbstractCodec {
         @Override
         public String toString() {
             return "StringData{" +
-                    "absoluteExpireTime=" + absoluteExpireTime +
+                    "actualExpireTime=" + actualExpireTime +
                     ", data='" + data + '\'' +
                     '}';
         }
     }
 
     public static void main(String[] args) {
-        String message = "message";
-        StringData stringData = JSONObject.parseObject(message, StringData.class);
-        System.out.println(stringData);
+        StringCodec stringCodec = new StringCodec();
+        String encode = (String) stringCodec.encode(1, null);
+        System.out.println(encode);
     }
 
 }

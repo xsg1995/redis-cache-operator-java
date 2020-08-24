@@ -32,7 +32,7 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     public Map<String, String> getAllMap(String key) {
         Map<String, String> map = this.transporter.getAllMap(key);
         MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(map, CodecEnum.MAP);
-        boolean invalid = this.isInvalid(mapData.getAbsoluteExpireTime());
+        boolean invalid = this.isInvalid(mapData.getActualExpireTime());
 
         if (invalid) {
             return Constants.EMPTY_MAP;
@@ -65,7 +65,7 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
         } else {
             //缓存中存在数据，则判断缓存是否已经过期
             MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(resMap, CodecEnum.MAP);
-            boolean invalid = this.isInvalid(mapData.getAbsoluteExpireTime());
+            boolean invalid = this.isInvalid(mapData.getActualExpireTime());
 
             if (invalid) {
                 //缓存过期，则刷新缓存数据

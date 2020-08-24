@@ -20,10 +20,10 @@ public class MapCodec extends AbstractCodec {
             data = (HashMap<String, String>) inData.clone();
         }
 
-        long absoluteExpireTime = this.getAbsolutionExpireTime(expire);
-        data.put(Constants.ABSOLUTE_EXPIRE_TIME_KEY, String.valueOf(absoluteExpireTime));
+        long actualExpireTime = this.getActualExpireTime(expire);
+        data.put(Constants.ACTUAL_EXPIRE_TIME_KEY, String.valueOf(actualExpireTime));
 
-        return new MapData(absoluteExpireTime, data);
+        return new MapData(actualExpireTime, data);
     }
 
     @Override
@@ -33,30 +33,30 @@ public class MapCodec extends AbstractCodec {
             data = new HashMap<>();
         }
 
-        String absoluteExpireTime = data.get(Constants.ABSOLUTE_EXPIRE_TIME_KEY);
-        long targetAbsoluteExpireTime = StringUtils.isNotBlank(absoluteExpireTime) ? Long.parseLong(absoluteExpireTime) : Constants.ABSOLUTE_EXPIRE_TIME;
-        data.remove(Constants.ABSOLUTE_EXPIRE_TIME_KEY);
+        String actualExpireTime = data.get(Constants.ACTUAL_EXPIRE_TIME_KEY);
+        long targetActualExpireTime = StringUtils.isNotBlank(actualExpireTime) ? Long.parseLong(actualExpireTime) : Constants.ACTUAL_EXPIRE_TIME;
+        data.remove(Constants.ACTUAL_EXPIRE_TIME_KEY);
 
-        return new MapData(targetAbsoluteExpireTime, data);
+        return new MapData(targetActualExpireTime, data);
     }
 
     public static class MapData {
         //失效日期
-        long absoluteExpireTime;
+        long actualExpireTime;
         //实际数据
         Map<String, String> data;
 
-        public MapData(long absoluteExpireTime, Map<String, String> data) {
-            this.absoluteExpireTime = absoluteExpireTime;
+        public MapData(long actualExpireTime, Map<String, String> data) {
+            this.actualExpireTime = actualExpireTime;
             this.data = data;
         }
 
-        public long getAbsoluteExpireTime() {
-            return absoluteExpireTime;
+        public long getActualExpireTime() {
+            return actualExpireTime;
         }
 
-        public void setAbsoluteExpireTime(long absoluteExpireTime) {
-            this.absoluteExpireTime = absoluteExpireTime;
+        public void setActualExpireTime(long actualExpireTime) {
+            this.actualExpireTime = actualExpireTime;
         }
 
         public Map<String, String> getData() {

@@ -9,9 +9,7 @@ import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -157,6 +155,32 @@ public class RedisCacheOperatorTest {
         assertEquals(res, mockData);
 
         cacheOperator.del(mapKey);
+    }
+
+    @Test
+    public void getString_with_block_test() throws InterruptedException {
+        String key = "hello";
+        CacheOperator cacheOperator = new RedisCacheOperator();
+
+        int nThread = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(nThread);
+        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
+        for (int i = 0; i < nThread; i++) {
+            executorService.submit(() -> {
+                try {
+                    String value = cacheOperator.getString(key, EXPIRE, () -> {
+                        sleep(10);
+                        return "redis-cache-operator-java";
+                    });
+                    System.out.println("result:" + value);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+        countDownLatch.await();
+        executorService.shutdown();
+        cacheOperator.del(key);
     }
 
     private void sleep(int second) {

@@ -31,7 +31,7 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
     public String getString(String key) {
         String res = this.transporter.getString(key);
         StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
-        boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
+        boolean invalid = this.isInvalid(stringData.getActualExpireTime());
 
         if (invalid) {
             //缓存数据过期
@@ -58,26 +58,18 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
     private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor<String> cacheExecutor) {
         String res = this.transporter.getString(key);
 
-        if (StringUtils.isBlank(res)) {
-            //缓存中不存在数据，获取数据，放入缓存
+        //数据解码
+        StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
+        boolean invalid = this.isInvalid(stringData.getActualExpireTime());
+
+        if (invalid) {
+            //缓存过期获取缓存中无数据，刷新缓存
             res = cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
         } else {
-            //缓存中存在数据，判断缓存是否已经过期
-            StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
-            boolean invalid = this.isInvalid(stringData.getAbsoluteExpireTime());
-
-            if (invalid) {
-                //缓存过期，刷新缓存
-                res = cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
-                //如果有其他线程在刷新缓存，则返回现在缓存中的值
-                if (Constants.EMPTY_STRING.equals(res)) {
-                    res = stringData.getData();
-                }
-            } else {
-                //未过期
-                res = stringData.getData();
-            }
+            //缓存中存在数据且未过期
+            res = stringData.getData();
         }
+
         if (res == null) {
             res = Constants.EMPTY_STRING;
         }
@@ -106,10 +98,6 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
             long newExpire = this.getExtendExpire(expire);
             String encode = (String) this.getEncodeData(expire, data, CodecEnum.STRING);
             this.transporter.set(key, newExpire, encode);
-
-            if (StringUtils.isBlank(data)) {
-                data = Constants.EMPTY_STRING;
-            }
 
             return data;
         } finally {

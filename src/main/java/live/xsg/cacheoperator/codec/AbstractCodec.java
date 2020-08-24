@@ -6,7 +6,7 @@ package live.xsg.cacheoperator.codec;
  */
 public abstract class AbstractCodec implements Codec {
 
-    protected long getAbsolutionExpireTime(long expire) {
+    protected long getActualExpireTime(long expire) {
         return System.currentTimeMillis() + expire;
     }
 }
