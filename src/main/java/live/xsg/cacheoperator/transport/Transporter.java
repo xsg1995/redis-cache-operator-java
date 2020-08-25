@@ -13,7 +13,7 @@ public interface Transporter {
      * @param key key
      * @return value
      */
-    String getString(String key);
+    String get(String key);
 
     /**
      * 设置key value
@@ -56,7 +56,7 @@ public interface Transporter {
      * @param key key
      * @return value
      */
-    Map<String, String> getAllMap(String key);
+    Map<String, String> hgetAll(String key);
 
     /**
      * 设置map
@@ -65,4 +65,12 @@ public interface Transporter {
      * @param data data
      */
     void hset(String key, long expire, Map<String, String> data);
+
+    /**
+     * 获取map中的某个字段的值
+     * @param key map对应的key
+     * @param field map中某个字段的key
+     * @return map中对应字段的值
+     */
+    String hget(String key, String field);
 }

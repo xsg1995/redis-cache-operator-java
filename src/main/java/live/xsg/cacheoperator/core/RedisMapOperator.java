@@ -29,8 +29,8 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     }
 
     @Override
-    public Map<String, String> getAllMap(String key) {
-        Map<String, String> map = this.transporter.getAllMap(key);
+    public Map<String, String> hgetAll(String key) {
+        Map<String, String> map = this.transporter.hgetAll(key);
         MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(map, CodecEnum.MAP);
         boolean invalid = this.isInvalid(mapData.getActualExpireTime());
 
@@ -42,22 +42,47 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     }
 
     @Override
-    public Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher) {
-        return this.getAllMap(key, expire, flusher, new SyncCacheExecutor<>());
+    public Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher) {
+        return this.hgetAll(key, expire, flusher, new SyncCacheExecutor<>());
     }
 
     @Override
-    public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
-        return this.getAllMap(key, expire, flusher, this.asyncCacheExecutor);
+    public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
+        return this.hgetAll(key, expire, flusher, this.asyncCacheExecutor);
     }
 
     @Override
-    public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
-        return this.getAllMap(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
+    public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
+        return this.hgetAll(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
     }
 
-    private Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher, CacheExecutor<Map<String, String>> cacheExecutor) {
-        Map<String, String> resMap = this.transporter.getAllMap(key);
+    @Override
+    public String hget(String key, String field) {
+        String res = this.transporter.hget(key, field);
+        if (res == null) {
+            return Constants.EMPTY_STRING;
+        }
+        return res;
+    }
+
+    @Override
+    public String hget(String key, String field, long expire, Refresher<Map<String, String>> flusher) {
+        String res = this.transporter.hget(key, field);
+        if (res != null) {
+            return res;
+        }
+
+        //缓存中无数据，则获取请求数据
+        Map<String, String> data = this.hgetAll(key, expire, flusher);
+        res = data.get(field);
+        if (res == null) {
+            res = Constants.EMPTY_STRING;
+        }
+        return res;
+    }
+
+    private Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher, CacheExecutor<Map<String, String>> cacheExecutor) {
+        Map<String, String> resMap = this.transporter.hgetAll(key);
 
         //数据解码
         MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(resMap, CodecEnum.MAP);
@@ -112,7 +137,7 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     @Override
     protected Object getDataIgnoreValid(String key) {
         //检查是否已经有其他线程刷新完缓存
-        Map<String, String> cacheMap = this.transporter.getAllMap(key);
+        Map<String, String> cacheMap = this.transporter.hgetAll(key);
         if (MapUtils.isEmpty(cacheMap)) return null;
 
         MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(cacheMap, CodecEnum.MAP);

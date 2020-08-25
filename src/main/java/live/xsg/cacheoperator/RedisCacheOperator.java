@@ -45,43 +45,53 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
     }
 
     @Override
-    public String getString(String key, long expire, Refresher<String> flusher) {
-        return this.cacheOperatorProxy.getString(key, expire, flusher);
+    public String get(String key, long expire, Refresher<String> flusher) {
+        return this.cacheOperatorProxy.get(key, expire, flusher);
     }
 
     @Override
-    public String getStringAsync(String key, long expire, Refresher<String> flusher) {
-        return this.cacheOperatorProxy.getStringAsync(key, expire, flusher);
+    public String getAsync(String key, long expire, Refresher<String> flusher) {
+        return this.cacheOperatorProxy.getAsync(key, expire, flusher);
     }
 
     @Override
-    public String getStringAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
-        return this.cacheOperatorProxy.getStringAsync(key, expire, flusher, executorService);
+    public String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
+        return this.cacheOperatorProxy.getAsync(key, expire, flusher, executorService);
     }
 
     @Override
-    public String getString(String key) {
-        return this.cacheOperatorProxy.getString(key);
+    public String get(String key) {
+        return this.cacheOperatorProxy.get(key);
     }
 
     @Override
-    public Map<String, String> getAllMap(String key) {
-        return this.cacheOperatorProxy.getAllMap(key);
+    public Map<String, String> hgetAll(String key) {
+        return this.cacheOperatorProxy.hgetAll(key);
     }
 
     @Override
-    public Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher) {
-        return this.cacheOperatorProxy.getAllMap(key, expire, flusher);
+    public Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher) {
+        return this.cacheOperatorProxy.hgetAll(key, expire, flusher);
     }
 
     @Override
-    public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
-        return this.cacheOperatorProxy.getAllMapAsync(key, expire, flusher);
+    public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
+        return this.cacheOperatorProxy.hgetAllAsync(key, expire, flusher);
     }
 
     @Override
-    public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
-        return this.cacheOperatorProxy.getAllMapAsync(key, expire, flusher, executorService);
+    public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
+        return this.cacheOperatorProxy.hgetAllAsync(key, expire, flusher, executorService);
+    }
+
+    @Override
+    public String hget(String key, String field) {
+        return this.cacheOperatorProxy.hget(key, field);
+    }
+
+    @Override
+    public String hget(String key, String field, long expire, Refresher<Map<String, String>> flusher) {
+        return this.hget(key, field, expire, flusher);
     }
 
     @Override
@@ -140,43 +150,53 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
         }
 
         @Override
-        public String getString(String key, long expire, Refresher<String> flusher) {
-            return this.stringOperator.getString(key, expire, flusher);
+        public String get(String key, long expire, Refresher<String> flusher) {
+            return this.stringOperator.get(key, expire, flusher);
         }
 
         @Override
-        public String getStringAsync(String key, long expire, Refresher<String> flusher) {
-            return this.stringOperator.getStringAsync(key, expire, flusher);
+        public String getAsync(String key, long expire, Refresher<String> flusher) {
+            return this.stringOperator.getAsync(key, expire, flusher);
         }
 
         @Override
-        public String getStringAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
-            return this.stringOperator.getStringAsync(key, expire, flusher, executorService);
+        public String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
+            return this.stringOperator.getAsync(key, expire, flusher, executorService);
         }
 
         @Override
-        public String getString(String key) {
-            return this.stringOperator.getString(key);
+        public String get(String key) {
+            return this.stringOperator.get(key);
         }
 
         @Override
-        public Map<String, String> getAllMap(String key) {
-            return this.mapOperator.getAllMap(key);
+        public Map<String, String> hgetAll(String key) {
+            return this.mapOperator.hgetAll(key);
         }
 
         @Override
-        public Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher) {
-            return this.mapOperator.getAllMap(key, expire, flusher);
+        public Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher) {
+            return this.mapOperator.hgetAll(key, expire, flusher);
         }
 
         @Override
-        public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
-            return this.mapOperator.getAllMapAsync(key, expire, flusher);
+        public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
+            return this.mapOperator.hgetAllAsync(key, expire, flusher);
         }
 
         @Override
-        public Map<String, String> getAllMapAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
-            return this.mapOperator.getAllMapAsync(key, expire, flusher, executorService);
+        public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
+            return this.mapOperator.hgetAllAsync(key, expire, flusher, executorService);
+        }
+
+        @Override
+        public String hget(String key, String field) {
+            return this.mapOperator.hget(key, field);
+        }
+
+        @Override
+        public String hget(String key, String field, long expire, Refresher<Map<String, String>> flusher) {
+            return this.mapOperator.hget(key, field, expire, flusher);
         }
     }
 

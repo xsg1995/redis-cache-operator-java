@@ -15,7 +15,7 @@ public interface StringOperator {
      * @param key key
      * @return 返回缓存数据，如果缓存中无数据或者缓存过期，则返回 Constants.EMPTY_STRING
      */
-    String getString(String key);
+    String get(String key);
 
     /**
      * 字符串类型
@@ -29,7 +29,7 @@ public interface StringOperator {
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @return 返回缓存中的数据
      */
-    String getString(String key, long expire, Refresher<String> flusher);
+    String get(String key, long expire, Refresher<String> flusher);
 
     /**
      * 字符串类型
@@ -44,7 +44,7 @@ public interface StringOperator {
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @return 返回缓存中的数据
      */
-    String getStringAsync(String key, long expire, Refresher<String> flusher);
+    String getAsync(String key, long expire, Refresher<String> flusher);
 
     /**
      * 字符串类型
@@ -59,5 +59,5 @@ public interface StringOperator {
      * @param executorService 指定以线程池实现
      * @return 返回缓存中的数据
      */
-    String getStringAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService);
+    String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService);
 }

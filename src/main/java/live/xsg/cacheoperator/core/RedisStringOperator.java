@@ -28,8 +28,8 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
     }
 
     @Override
-    public String getString(String key) {
-        String res = this.transporter.getString(key);
+    public String get(String key) {
+        String res = this.transporter.get(key);
         StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
         boolean invalid = this.isInvalid(stringData.getActualExpireTime());
 
@@ -41,22 +41,22 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
     }
 
     @Override
-    public String getString(String key, long expire, Refresher<String> flusher) {
-        return this.getString(key, expire, flusher, new SyncCacheExecutor<>());
+    public String get(String key, long expire, Refresher<String> flusher) {
+        return this.get(key, expire, flusher, new SyncCacheExecutor<>());
     }
 
     @Override
-    public String getStringAsync(String key, long expire, Refresher<String> flusher) {
-        return this.getString(key, expire, flusher, this.asyncCacheExecutor);
+    public String getAsync(String key, long expire, Refresher<String> flusher) {
+        return this.get(key, expire, flusher, this.asyncCacheExecutor);
     }
 
     @Override
-    public String getStringAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
-        return this.getString(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
+    public String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
+        return this.get(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
     }
 
-    private String getString(String key, long expire, Refresher<String> flusher, CacheExecutor<String> cacheExecutor) {
-        String res = this.transporter.getString(key);
+    private String get(String key, long expire, Refresher<String> flusher, CacheExecutor<String> cacheExecutor) {
+        String res = this.transporter.get(key);
 
         //数据解码
         StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
@@ -110,7 +110,7 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
 
     @Override
     protected String getDataIgnoreValid(String key) {
-        String res = this.transporter.getString(key);
+        String res = this.transporter.get(key);
         if (StringUtils.isBlank(res)) return null;
 
         StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);

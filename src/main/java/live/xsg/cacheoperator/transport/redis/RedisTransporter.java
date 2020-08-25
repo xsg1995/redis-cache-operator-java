@@ -33,7 +33,7 @@ public class RedisTransporter implements Transporter {
     }
 
     @Override
-    public String getString(String key) {
+    public String get(String key) {
         return execute((jedis) -> jedis.get(key));
     }
 
@@ -70,7 +70,7 @@ public class RedisTransporter implements Transporter {
     }
 
     @Override
-    public Map<String, String> getAllMap(String key) {
+    public Map<String, String> hgetAll(String key) {
         return this.execute(jedis -> jedis.hgetAll(key));
     }
 
@@ -80,6 +80,11 @@ public class RedisTransporter implements Transporter {
 
         data.forEach((k, v) -> this.execute(jedis -> jedis.hset(key, k, v)));
         this.pexpire(key, expire);
+    }
+
+    @Override
+    public String hget(String key, String field) {
+        return this.execute(jedis -> jedis.hget(key, field));
     }
 
     private <T> T execute(JedisExecutor<T> executor) {

@@ -28,7 +28,7 @@ public class RedisCacheOperatorTest {
         long expire = 10 * 60 * 1000;  //10 分钟
 
         CacheOperator cacheOperator = new RedisCacheOperator();
-        String cacheValue = cacheOperator.getString(key, expire, () -> {
+        String cacheValue = cacheOperator.get(key, expire, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
         });
@@ -44,7 +44,7 @@ public class RedisCacheOperatorTest {
         long expire = 10 * 60 * 1000;  //10 分钟
 
         CacheOperator cacheOperator = new RedisCacheOperator();
-        String cacheValue = cacheOperator.getStringAsync(key, expire, () -> {
+        String cacheValue = cacheOperator.getAsync(key, expire, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
         });
@@ -72,7 +72,7 @@ public class RedisCacheOperatorTest {
         });
 
         CacheOperator cacheOperator = new RedisCacheOperator();
-        String cacheValue = cacheOperator.getString(key, EXPIRE, () -> {
+        String cacheValue = cacheOperator.get(key, EXPIRE, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
         });
@@ -101,14 +101,14 @@ public class RedisCacheOperatorTest {
 
         CacheOperator cacheOperator = new RedisCacheOperator();
 
-        String ignoreValue = cacheOperator.getString(ignoreKey, EXPIRE, () -> {
+        String ignoreValue = cacheOperator.get(ignoreKey, EXPIRE, () -> {
             //执行业务逻辑，获取值
             return "value";
         });
 
 
         String targetKey = "targetKey";
-        String targetValue = cacheOperator.getString(targetKey, EXPIRE, () -> {
+        String targetValue = cacheOperator.get(targetKey, EXPIRE, () -> {
             //执行业务逻辑，获取值
             return "value";
         });
@@ -121,7 +121,7 @@ public class RedisCacheOperatorTest {
     public void getAllMap_test() {
         String mapKey = "mapKey";
         CacheOperator cacheOperator = new RedisCacheOperator();
-        Map<String, String> resMap = cacheOperator.getAllMap(mapKey);
+        Map<String, String> resMap = cacheOperator.hgetAll(mapKey);
         assertEquals(resMap, Constants.EMPTY_MAP);
     }
 
@@ -132,7 +132,7 @@ public class RedisCacheOperatorTest {
         mockData.put("value", "mapValue");
 
         CacheOperator cacheOperator = new RedisCacheOperator();
-        Map<String, String> res = cacheOperator.getAllMap(mapKey, EXPIRE, () -> mockData);
+        Map<String, String> res = cacheOperator.hgetAll(mapKey, EXPIRE, () -> mockData);
 
         assertEquals(res, mockData);
 
@@ -146,7 +146,7 @@ public class RedisCacheOperatorTest {
         mockData.put("value", "mapValue");
 
         CacheOperator cacheOperator = new RedisCacheOperator();
-        Map<String, String> res = cacheOperator.getAllMapAsync(mapKey, EXPIRE, () -> mockData);
+        Map<String, String> res = cacheOperator.hgetAllAsync(mapKey, EXPIRE, () -> mockData);
 
         assertEquals(res, Constants.EMPTY_MAP);
 
@@ -168,7 +168,7 @@ public class RedisCacheOperatorTest {
         for (int i = 0; i < nThread; i++) {
             executorService.submit(() -> {
                 try {
-                    String value = cacheOperator.getString(key, EXPIRE, () -> {
+                    String value = cacheOperator.get(key, EXPIRE, () -> {
                         sleep(10);
                         return "redis-cache-operator-java";
                     });
@@ -181,6 +181,16 @@ public class RedisCacheOperatorTest {
         countDownLatch.await();
         executorService.shutdown();
         cacheOperator.del(key);
+    }
+
+    @Test
+    public void hget_test() {
+        String key = "hgetKey";
+        String field = "hgetField";
+        CacheOperator cacheOperator = new RedisCacheOperator();
+        String result = cacheOperator.hget(key, field);
+
+        assertEquals(result, "");
     }
 
     private void sleep(int second) {
