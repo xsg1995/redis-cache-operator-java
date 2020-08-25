@@ -59,27 +59,18 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     private Map<String, String> getAllMap(String key, long expire, Refresher<Map<String, String>> flusher, CacheExecutor<Map<String, String>> cacheExecutor) {
         Map<String, String> resMap = this.transporter.getAllMap(key);
 
-        if (MapUtils.isEmpty(resMap)) {
-            //缓存中不存在数据，获取数据放入缓存
+        //数据解码
+        MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(resMap, CodecEnum.MAP);
+        boolean invalid = this.isInvalid(mapData.getActualExpireTime());
+
+        if (invalid) {
+            //缓存过期获取缓存中无数据，刷新缓存
             resMap = cacheExecutor.executor(() -> this.doFillMapCache(key, expire, flusher));
         } else {
-            //缓存中存在数据，则判断缓存是否已经过期
-            MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(resMap, CodecEnum.MAP);
-            boolean invalid = this.isInvalid(mapData.getActualExpireTime());
-
-            if (invalid) {
-                //缓存过期，则刷新缓存数据
-                resMap = cacheExecutor.executor(() -> this.doFillMapCache(key, expire, flusher));
-
-                //如果有其他线程在刷新缓存，则返回现在缓存中的值
-                if (Constants.EMPTY_MAP.equals(resMap)) {
-                    resMap = mapData.getData();
-                }
-            } else {
-                //未过期
-                resMap = mapData.getData();
-            }
+            //缓存中存在数据且未过期
+            resMap = mapData.getData();
         }
+
         if (resMap == null) {
             resMap = new HashMap<>();
         }
@@ -108,10 +99,6 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
             long newExpire = this.getExtendExpire(expire);
             MapCodec.MapData encodeMap = (MapCodec.MapData) this.getEncodeData(expire, data, CodecEnum.MAP);
             this.transporter.hset(key, newExpire, encodeMap.getData());
-
-            if (MapUtils.isEmpty(data)) {
-                data = Constants.EMPTY_MAP;
-            }
 
             return data;
         } finally {

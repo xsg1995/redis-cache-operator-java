@@ -10,10 +10,12 @@ import java.util.Map;
  * Created by xsg on 2020/8/17.
  */
 public class MapCodec extends AbstractCodec {
+
+    @SuppressWarnings("unchecked")
     @Override
     public Object encode(long expire, Object message) {
         HashMap<String, String> inData = (HashMap<String, String>) message;
-        HashMap<String, String> data = null;
+        HashMap<String, String> data;
         if (inData == null) {
             data = new HashMap<>();
         } else {
@@ -26,6 +28,7 @@ public class MapCodec extends AbstractCodec {
         return new MapData(actualExpireTime, data);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object decode(Object message) {
         Map<String, String> data = (Map<String, String>) message;
