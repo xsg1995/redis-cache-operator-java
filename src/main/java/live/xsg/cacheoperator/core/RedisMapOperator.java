@@ -81,6 +81,26 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
         return res;
     }
 
+    @Override
+    public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
+        String res = this.transporter.hget(key, field);
+        if (res != null) {
+            return res;
+        }
+        this.hgetAllAsync(key, expire, fluster);
+        return Constants.EMPTY_STRING;
+    }
+
+    @Override
+    public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
+        String res = this.transporter.hget(key, field);
+        if (res != null) {
+            return res;
+        }
+        this.hgetAllAsync(key, expire, fluster, executorService);
+        return Constants.EMPTY_STRING;
+    }
+
     private Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher, CacheExecutor<Map<String, String>> cacheExecutor) {
         Map<String, String> resMap = this.transporter.hgetAll(key);
 

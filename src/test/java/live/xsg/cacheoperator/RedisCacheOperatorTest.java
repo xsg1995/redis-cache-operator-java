@@ -193,6 +193,23 @@ public class RedisCacheOperatorTest {
         assertEquals(result, "");
     }
 
+    @Test
+    public void hgetAsync_test() throws ExecutionException, InterruptedException {
+        String mapKey = "mapKey";
+        Map<String, String> mockData = new HashMap<>();
+        mockData.put("value", "mapValue");
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+        String value = cacheOperator.hgetAsync(mapKey, "value", EXPIRE, () -> mockData);
+        assertEquals(value, Constants.EMPTY_STRING);
+
+        Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture();
+        Map<String, String> res = future.get();
+        assertEquals(res, mockData);
+
+        cacheOperator.del(mapKey);
+    }
+
     private void sleep(int second) {
         try {
             TimeUnit.SECONDS.sleep(second);

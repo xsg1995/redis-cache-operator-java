@@ -28,9 +28,7 @@ public class MockRegister {
 
     private MockRegister() {
         List<Mock> extensions = extensionLoader.getExtensions(Mock.class);
-        for (Mock mock : extensions) {
-            mocks.add(mock);
-        }
+        mocks.addAll(extensions);
     }
 
     /**

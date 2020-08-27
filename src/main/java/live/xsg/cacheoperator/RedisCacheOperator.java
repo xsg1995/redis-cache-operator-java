@@ -95,6 +95,16 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
     }
 
     @Override
+    public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
+        return this.cacheOperatorProxy.hgetAsync(key, field, expire, fluster);
+    }
+
+    @Override
+    public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
+        return this.cacheOperatorProxy.hgetAsync(key, field, expire, fluster, executorService);
+    }
+
+    @Override
     public void del(String key) {
         this.cacheOperatorProxy.del(key);
     }
@@ -197,6 +207,16 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
         @Override
         public String hget(String key, String field, long expire, Refresher<Map<String, String>> flusher) {
             return this.mapOperator.hget(key, field, expire, flusher);
+        }
+
+        @Override
+        public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
+            return this.mapOperator.hgetAsync(key, field, expire, fluster);
+        }
+
+        @Override
+        public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
+            return this.mapOperator.hgetAsync(key, field, expire, fluster, executorService);
         }
     }
 
