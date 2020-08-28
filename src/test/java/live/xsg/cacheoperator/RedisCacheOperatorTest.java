@@ -64,7 +64,7 @@ public class RedisCacheOperatorTest {
         String sourceValue = "hello world!";
         String mockValue = "i am mock value.";
 
-        MockRegister.getInstance().register((k, cacheOperator, method) -> {
+        MockRegister.getInstance().register((k, method) -> {
             if (key.equals(k)) {
                 return mockValue;
             }

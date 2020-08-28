@@ -31,8 +31,8 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     public AbstractCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(resourceLoader);
         this.transporter = transporter;
-        this.stringOperator = new RedisStringOperator(this.transporter, this, resourceLoader);
-        this.mapOperator = new RedisMapOperator(this.transporter, this, resourceLoader);
+        this.stringOperator = new RedisStringOperator(this.transporter , resourceLoader);
+        this.mapOperator = new RedisMapOperator(this.transporter, resourceLoader);
     }
 
     /**

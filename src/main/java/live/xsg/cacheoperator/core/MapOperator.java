@@ -26,7 +26,7 @@ public interface MapOperator {
      * 2.缓存存在数据，则返回缓存中的旧数据
      *
      * @param key key
-     * @param expire 缓存过期时间，单位毫秒
+     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @return 返回缓存中的数据
      */
@@ -41,7 +41,7 @@ public interface MapOperator {
      * 使用 Executor executor = Executors.newCachedThreadPool()
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
-     * @param expire 缓存过期时间，单位毫秒
+     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @return 返回缓存中的数据
      */
@@ -55,7 +55,7 @@ public interface MapOperator {
      * 如果当前已经有其他现在在刷新缓存，则当前线程返回 空的HashMap 或者缓存中的旧数据
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
-     * @param expire 缓存过期时间，单位毫秒
+     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @param executorService 指定以线程池实现
      * @return 返回缓存中的数据
@@ -79,7 +79,7 @@ public interface MapOperator {
      * 2.缓存存在数据，则返回缓存中的旧数据
      * @param key key
      * @param field map中的key
-     * @param expire 过期时间 毫秒
+     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @return 返回缓存中的数据
      */
@@ -94,7 +94,7 @@ public interface MapOperator {
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param field map中的key
-     * @param expire 过期时间 毫秒
+     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param fluster 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @return 返回缓存中的数据
      */
@@ -109,7 +109,7 @@ public interface MapOperator {
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param field map中的key
-     * @param expire 过期时间 毫秒
+     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param fluster 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @param executorService 指定线程池实现
      * @return 返回缓存中的数据

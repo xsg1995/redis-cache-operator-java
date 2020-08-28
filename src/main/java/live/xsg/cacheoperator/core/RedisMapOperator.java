@@ -1,6 +1,5 @@
 package live.xsg.cacheoperator.core;
 
-import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.MapCodec;
 import live.xsg.cacheoperator.common.Constants;
@@ -24,8 +23,8 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     //异步任务执行器
     protected CacheExecutor<Map<String, String>> asyncCacheExecutor = new AsyncCacheExecutor();
 
-    public RedisMapOperator(Transporter transporter, CacheOperator cacheOperator, ResourceLoader resourceLoader) {
-        super(transporter, cacheOperator, resourceLoader);
+    public RedisMapOperator(Transporter transporter, ResourceLoader resourceLoader) {
+        super(transporter, resourceLoader);
     }
 
     @Override

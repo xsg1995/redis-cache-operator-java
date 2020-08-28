@@ -1,6 +1,5 @@
 package live.xsg.cacheoperator.core;
 
-import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.codec.Codec;
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.CodecFactory;
@@ -33,17 +32,13 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
     protected long extendExpire;
     //缓存无数据时，线程最大阻塞时间
     protected long blockTime;
-
     //服务器交互接口 RedisTransporter
     protected Transporter transporter;
-    //缓存操作
-    protected CacheOperator cacheOperator;
 
 
-    public AbstractRedisOperator(Transporter transporter, CacheOperator cacheOperator, ResourceLoader resourceLoader) {
+    public AbstractRedisOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(resourceLoader);
         this.transporter = transporter;
-        this.cacheOperator = cacheOperator;
         this.loadingKeyExpire = this.resource.getLong(Constants.LOADING_KEY_EXPIRE, DEFAULT_LOADING_KEY_EXPIRE);
         this.extendExpire = this.resource.getLong(Constants.EXTEND_EXPIRE, DEFAULT_EXTEND_EXPIRE);
         this.blockTime = this.resource.getLong(Constants.BLOCK_TIME, DEFAULT_BLOCK_TIME);
@@ -140,7 +135,7 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
         while (mockCacheOperators.hasNext()) {
             Mock mock = mockCacheOperators.next();
             //执行mock逻辑
-            Object result = mock.mock(key, this.cacheOperator, null);
+            Object result = mock.mock(key, null);
             if (result != null) {
                 return result;
             }

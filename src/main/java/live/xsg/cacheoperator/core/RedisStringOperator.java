@@ -1,6 +1,5 @@
 package live.xsg.cacheoperator.core;
 
-import live.xsg.cacheoperator.CacheOperator;
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.StringCodec;
 import live.xsg.cacheoperator.common.Constants;
@@ -23,8 +22,8 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
     //异步任务执行器
     protected CacheExecutor<String> asyncCacheExecutor = new AsyncCacheExecutor();
 
-    public RedisStringOperator(Transporter transporter, CacheOperator cacheOperator, ResourceLoader resourceLoader) {
-        super(transporter, cacheOperator, resourceLoader);
+    public RedisStringOperator(Transporter transporter, ResourceLoader resourceLoader) {
+        super(transporter, resourceLoader);
     }
 
     @Override
