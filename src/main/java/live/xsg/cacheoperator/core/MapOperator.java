@@ -21,9 +21,9 @@ public interface MapOperator {
     /**
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则刷新缓存数据
-     * 控制只有一个线程可以刷新缓存，当存在其他线程在刷新缓存中，如果其他线程请求缓存数据，会有两种情况：
-     * 1.缓存不存在数据，则返回 Constants.EMPTY_MAP
-     * 2.缓存存在数据，则返回缓存中的旧数据
+     * 控制只有一个线程可以刷新缓存，当存在线程正在刷新缓存，如果其他线程请求缓存数据，会有两种情况：
+     * 1.缓存存在数据，则返回缓存中的数据
+     * 2.缓存不存在数据，则在阻塞一定时间，等待缓存中有数据在返回，参数 blockTime 控制
      *
      * @param key key
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
@@ -36,8 +36,8 @@ public interface MapOperator {
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则异步刷新缓存数据
      * 控制只有一个线程可以刷新缓存
-     * 如果当前没有其他线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回 空的HashMap 或者缓存中的旧数据
-     * 如果当前已经有其他现在在刷新缓存，则当前线程返回 空的HashMap 或者缓存中的旧数据
+     * 如果当前没有线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回 空的HashMap 或者缓存中的数据
+     * 如果当前已经有线程在刷新缓存，则当前线程返回 空的HashMap 或者缓存中的数据
      * 使用 Executor executor = Executors.newCachedThreadPool()
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
@@ -51,8 +51,8 @@ public interface MapOperator {
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则异步刷新缓存数据
      * 控制只有一个线程可以刷新缓存
-     * 如果当前没有其他线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回 空的HashMap 或者缓存中的旧数据
-     * 如果当前已经有其他现在在刷新缓存，则当前线程返回 空的HashMap 或者缓存中的旧数据
+     * 如果当前没有线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回 空的HashMap 或者缓存中的数据
+     * 如果当前已经有线程在刷新缓存，则当前线程返回 空的HashMap 或者缓存中的数据
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
@@ -74,9 +74,9 @@ public interface MapOperator {
     /**
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则刷新缓存数据
-     * 控制只有一个线程可以刷新缓存，当存在其他线程在刷新缓存中，如果其他线程请求缓存数据，会有两种情况：
-     * 1.缓存不存在数据，则返回 Constants.EMPTY_STRING
-     * 2.缓存存在数据，则返回缓存中的旧数据
+     * 控制只有一个线程可以刷新缓存，当存在线程正在刷新缓存，如果其他线程请求缓存数据，会有两种情况：
+     * 1.缓存存在数据，则返回缓存中的数据
+     * 2.缓存不存在数据，则在阻塞一定时间，等待缓存中有数据在返回，参数 blockTime 控制
      * @param key key
      * @param field map中的key
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
@@ -89,8 +89,8 @@ public interface MapOperator {
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则异步刷新缓存数据
      * 控制只有一个线程可以刷新缓存
-     * 如果当前没有其他线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回 Constants.EMPTY_STRING 或者缓存中的旧数据
-     * 如果当前已经有其他现在在刷新缓存，则当前线程返回 Constants.EMPTY_STRING 或者缓存中的旧数据
+     * 如果当前没有线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回 Constants.EMPTY_STRING 或者缓存中的数据
+     * 如果当前已经有线程在刷新缓存，则当前线程返回 Constants.EMPTY_STRING 或者缓存中的数据
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param field map中的key
@@ -104,8 +104,8 @@ public interface MapOperator {
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则异步刷新缓存数据
      * 控制只有一个线程可以刷新缓存
-     * 如果当前没有其他线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回 Constants.EMPTY_STRING 或者缓存中的旧数据
-     * 如果当前已经有其他现在在刷新缓存，则当前线程返回 Constants.EMPTY_STRING 或者缓存中的旧数据
+     * 如果当前没有线程在刷新缓存，则开启一个线程执行缓存刷新，当前线程返回 Constants.EMPTY_STRING 或者缓存中的旧数据
+     * 如果当前已经有线程在刷新缓存，则当前线程返回 Constants.EMPTY_STRING 或者缓存中的旧数据
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param field map中的key

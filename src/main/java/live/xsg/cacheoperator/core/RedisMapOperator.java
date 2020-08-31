@@ -30,14 +30,7 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     @Override
     public Map<String, String> hgetAll(String key) {
         Map<String, String> map = this.transporter.hgetAll(key);
-        MapData mapData = (MapData) this.getDecodeData(map, CodecEnum.MAP);
-        boolean invalid = mapData.isInvalid();
-
-        if (invalid) {
-            return Constants.EMPTY_MAP;
-        }
-
-        return mapData.getData();
+        return this.getDecodeData(map);
     }
 
     @Override
@@ -57,7 +50,9 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
 
     @Override
     public String hget(String key, String field) {
-        String res = this.transporter.hget(key, field);
+        Map<String, String> decodeMap = this.getDecodeData(key, field);
+
+        String res = decodeMap.get(field);
         if (res == null) {
             return Constants.EMPTY_STRING;
         }
@@ -66,7 +61,9 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
 
     @Override
     public String hget(String key, String field, long expire, Refresher<Map<String, String>> flusher) {
-        String res = this.transporter.hget(key, field);
+        Map<String, String> decodeMap = this.getDecodeData(key, field);
+
+        String res = decodeMap.get(field);
         if (res != null) {
             return res;
         }
@@ -82,7 +79,9 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
 
     @Override
     public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
-        String res = this.transporter.hget(key, field);
+        Map<String, String> decodeMap = this.getDecodeData(key, field);
+
+        String res = decodeMap.get(field);
         if (res != null) {
             return res;
         }
@@ -92,7 +91,9 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
 
     @Override
     public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
-        String res = this.transporter.hget(key, field);
+        Map<String, String> decodeMap = this.getDecodeData(key, field);
+
+        String res = decodeMap.get(field);
         if (res != null) {
             return res;
         }
@@ -160,6 +161,33 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
         if (MapUtils.isEmpty(cacheMap)) return null;
 
         MapData mapData = (MapData) this.getDecodeData(cacheMap, CodecEnum.MAP);
+        return mapData.getData();
+    }
+
+    /**
+     * 获取解码后的数据，如果缓存数据已过期，则返回 Constants.EMPTY_MAP
+     * @param key key
+     * @param field map中的字段的key
+     * @return 解码后的数据
+     */
+    private Map<String, String> getDecodeData(String key, String field) {
+        Map<String, String> map = this.transporter.hmget(key, Constants.ACTUAL_EXPIRE_TIME_KEY, field);
+        return this.getDecodeData(map);
+    }
+
+    /**
+     * 获取解码后的数据，如果缓存数据已过期，则返回 Constants.EMPTY_MAP
+     * @param map 原始的map数据
+     * @return 解码后的数据
+     */
+    private Map<String, String> getDecodeData(Map<String, String> map) {
+        MapData mapData = (MapData) this.getDecodeData(map, CodecEnum.MAP);
+        boolean invalid = mapData.isInvalid();
+
+        if (invalid) {
+            return Constants.EMPTY_MAP;
+        }
+
         return mapData.getData();
     }
 }

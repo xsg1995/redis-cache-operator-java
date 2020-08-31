@@ -73,4 +73,12 @@ public interface Transporter {
      * @return map中对应字段的值
      */
     String hget(String key, String field);
+
+    /**
+     * 获取多个map中的字段
+     * @param key map对应的key
+     * @param fields map中要获取字段的key
+     * @return map中的数据
+     */
+    Map<String, String> hmget(String key, String... fields);
 }

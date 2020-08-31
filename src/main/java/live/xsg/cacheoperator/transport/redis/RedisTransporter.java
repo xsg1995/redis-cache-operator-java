@@ -7,6 +7,9 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -85,6 +88,24 @@ public class RedisTransporter implements Transporter {
     @Override
     public String hget(String key, String field) {
         return this.execute(jedis -> jedis.hget(key, field));
+    }
+
+    @Override
+    public Map<String, String> hmget(String key, String... fields) {
+        return this.execute(jedis -> {
+            List<String> hmget = jedis.hmget(key, fields);
+
+            Map<String, String> result = new HashMap<>();
+            List<String> fieldsList = (fields != null) ? Arrays.asList(fields) : null;
+            if (fieldsList != null && !fieldsList.isEmpty()) {
+                for (int i = 0; i < fieldsList.size(); i++) {
+                    String field = fieldsList.get(i);
+                    String value = hmget.get(i);
+                    result.put(field, value);
+                }
+            }
+            return result;
+        });
     }
 
     private <T> T execute(JedisExecutor<T> executor) {
