@@ -1,7 +1,7 @@
 package live.xsg.cacheoperator.core;
 
 import live.xsg.cacheoperator.codec.CodecEnum;
-import live.xsg.cacheoperator.codec.StringCodec;
+import live.xsg.cacheoperator.codec.data.StringData;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
@@ -29,8 +29,8 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
     @Override
     public String get(String key) {
         String res = this.transporter.get(key);
-        StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
-        boolean invalid = this.isInvalid(stringData.getActualExpireTime());
+        StringData stringData = (StringData) this.getDecodeData(res, CodecEnum.STRING);
+        boolean invalid = stringData.isInvalid();
 
         if (invalid) {
             //缓存数据过期
@@ -58,8 +58,8 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
         String res = this.transporter.get(key);
 
         //数据解码
-        StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
-        boolean invalid = this.isInvalid(stringData.getActualExpireTime());
+        StringData stringData = (StringData) this.getDecodeData(res, CodecEnum.STRING);
+        boolean invalid = stringData.isInvalid();
 
         if (invalid) {
             //缓存过期获取缓存中无数据，刷新缓存
@@ -112,7 +112,7 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
         String res = this.transporter.get(key);
         if (StringUtils.isBlank(res)) return null;
 
-        StringCodec.StringData stringData = (StringCodec.StringData) this.getDecodeData(res, CodecEnum.STRING);
+        StringData stringData = (StringData) this.getDecodeData(res, CodecEnum.STRING);
         return stringData.getData();
     }
 

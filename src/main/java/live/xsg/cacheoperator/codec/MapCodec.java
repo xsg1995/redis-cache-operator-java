@@ -1,5 +1,6 @@
 package live.xsg.cacheoperator.codec;
 
+import live.xsg.cacheoperator.codec.data.MapData;
 import live.xsg.cacheoperator.common.Constants;
 import org.apache.commons.lang3.StringUtils;
 
@@ -41,34 +42,6 @@ public class MapCodec extends AbstractCodec {
         data.remove(Constants.ACTUAL_EXPIRE_TIME_KEY);
 
         return new MapData(targetActualExpireTime, data);
-    }
-
-    public static class MapData {
-        //失效日期
-        long actualExpireTime;
-        //实际数据
-        Map<String, String> data;
-
-        public MapData(long actualExpireTime, Map<String, String> data) {
-            this.actualExpireTime = actualExpireTime;
-            this.data = data;
-        }
-
-        public long getActualExpireTime() {
-            return actualExpireTime;
-        }
-
-        public void setActualExpireTime(long actualExpireTime) {
-            this.actualExpireTime = actualExpireTime;
-        }
-
-        public Map<String, String> getData() {
-            return data;
-        }
-
-        public void setData(Map<String, String> data) {
-            this.data = data;
-        }
     }
 
 }

@@ -152,7 +152,7 @@ public class FailbackCacheOperator {
         while (mockCacheOperators.hasNext()) {
             Mock mock = mockCacheOperators.next();
             //执行mock逻辑
-            Object result = mock.mock(key, this.cacheOperator, method);
+            Object result = mock.mock(key, method);
             if (result != null) {
                 return result;
             }

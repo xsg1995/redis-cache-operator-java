@@ -1,7 +1,7 @@
 package live.xsg.cacheoperator.core;
 
 import live.xsg.cacheoperator.codec.CodecEnum;
-import live.xsg.cacheoperator.codec.MapCodec;
+import live.xsg.cacheoperator.codec.data.MapData;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
@@ -30,8 +30,8 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     @Override
     public Map<String, String> hgetAll(String key) {
         Map<String, String> map = this.transporter.hgetAll(key);
-        MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(map, CodecEnum.MAP);
-        boolean invalid = this.isInvalid(mapData.getActualExpireTime());
+        MapData mapData = (MapData) this.getDecodeData(map, CodecEnum.MAP);
+        boolean invalid = mapData.isInvalid();
 
         if (invalid) {
             return Constants.EMPTY_MAP;
@@ -104,8 +104,8 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
         Map<String, String> resMap = this.transporter.hgetAll(key);
 
         //数据解码
-        MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(resMap, CodecEnum.MAP);
-        boolean invalid = this.isInvalid(mapData.getActualExpireTime());
+        MapData mapData = (MapData) this.getDecodeData(resMap, CodecEnum.MAP);
+        boolean invalid = mapData.isInvalid();
 
         if (invalid) {
             //缓存过期获取缓存中无数据，刷新缓存
@@ -141,7 +141,7 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
             Map<String, String> data = flusher.refresh();
 
             long newExpire = this.getExtendExpire(expire);
-            MapCodec.MapData encodeMap = (MapCodec.MapData) this.getEncodeData(expire, data, CodecEnum.MAP);
+            MapData encodeMap = (MapData) this.getEncodeData(expire, data, CodecEnum.MAP);
             this.transporter.hset(key, newExpire, encodeMap.getData());
 
             return data;
@@ -159,7 +159,7 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
         Map<String, String> cacheMap = this.transporter.hgetAll(key);
         if (MapUtils.isEmpty(cacheMap)) return null;
 
-        MapCodec.MapData mapData = (MapCodec.MapData) this.getDecodeData(cacheMap, CodecEnum.MAP);
+        MapData mapData = (MapData) this.getDecodeData(cacheMap, CodecEnum.MAP);
         return mapData.getData();
     }
 }
