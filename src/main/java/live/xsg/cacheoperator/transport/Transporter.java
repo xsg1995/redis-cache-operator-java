@@ -1,5 +1,6 @@
 package live.xsg.cacheoperator.transport;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -81,4 +82,29 @@ public interface Transporter {
      * @return map中的数据
      */
     Map<String, String> hmget(String key, String... fields);
+
+    /**
+     * 获取list数据
+     * @param key key
+     * @param start start
+     * @param end end
+     * @return 返回的list数据
+     */
+    List<String> lrange(String key, long start, long end);
+
+    /**
+     * 填充数据到list中
+     * @param key key
+     * @param expire 过期时间
+     * @param strings 具体数据
+     * @return 结果
+     */
+    Long lpush(String key, long expire, String... strings);
+
+    /**
+     * 判断某个key是否存在
+     * @param key key
+     * @return 存在返回true，否则返回false
+     */
+    boolean exists(String key);
 }

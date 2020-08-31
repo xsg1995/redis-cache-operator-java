@@ -7,8 +7,7 @@ import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.mock.MockRegister;
 import org.testng.annotations.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static org.testng.Assert.assertEquals;
@@ -208,6 +207,43 @@ public class RedisCacheOperatorTest {
         assertEquals(res, mockData);
 
         cacheOperator.del(mapKey);
+    }
+
+    @Test
+    public void lrange_test() throws InterruptedException {
+        String key = "fruit";
+        List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
+        List<String> mockFruits = Arrays.asList("peach", "lemon");
+
+        MockRegister.getInstance().register((k, method) -> {
+            if (key.equals(k)) {
+                return mockFruits;
+            }
+            return null;
+        });
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+
+        int nThread = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(nThread);
+        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
+        for (int i = 0; i < nThread; i++) {
+            executorService.submit(() -> {
+                try {
+                    List<String> result = cacheOperator.lrange(key, 0, -1, EXPIRE, () -> {
+                        System.out.println("access...........................");
+                        sleep(1);
+                        return fruits;
+                    });
+                    System.out.println(result);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+        countDownLatch.await();
+        executorService.shutdown();
+        cacheOperator.del(key);
     }
 
     private void sleep(int second) {

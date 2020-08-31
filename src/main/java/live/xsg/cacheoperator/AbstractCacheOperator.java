@@ -1,10 +1,7 @@
 package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.context.RedisCacheContext;
-import live.xsg.cacheoperator.core.MapOperator;
-import live.xsg.cacheoperator.core.RedisMapOperator;
-import live.xsg.cacheoperator.core.RedisStringOperator;
-import live.xsg.cacheoperator.core.StringOperator;
+import live.xsg.cacheoperator.core.*;
 import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.resource.DefaultResourceRegister;
@@ -23,6 +20,8 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     protected StringOperator stringOperator;
     //map类型操作接口
     protected MapOperator mapOperator;
+    //list类型操作接口
+    protected ListOperator listOperator;
     //过滤器链构造器
     protected FilterChain filterChain = FilterChain.getInstance();
     //失败降级策略
@@ -33,6 +32,7 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
         this.transporter = transporter;
         this.stringOperator = new RedisStringOperator(this.transporter , resourceLoader);
         this.mapOperator = new RedisMapOperator(this.transporter, resourceLoader);
+        this.listOperator = new RedisListOperator(this.transporter, resourceLoader);
     }
 
     /**

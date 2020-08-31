@@ -108,6 +108,23 @@ public class RedisTransporter implements Transporter {
         });
     }
 
+    @Override
+    public List<String> lrange(String key, long start, long end) {
+        return this.execute(jedis -> jedis.lrange(key, start, end));
+    }
+
+    @Override
+    public Long lpush(String key, long expire, String... strings) {
+        Long res = this.execute(jedis -> jedis.lpush(key, strings));
+        this.pexpire(key, expire);
+        return res;
+    }
+
+    @Override
+    public boolean exists(String key) {
+        return this.execute(jedis -> jedis.exists(key));
+    }
+
     private <T> T execute(JedisExecutor<T> executor) {
         T res = null;
         try (Jedis jedis = this.jedisPool.getResource()) {

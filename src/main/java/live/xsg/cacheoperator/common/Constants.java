@@ -1,8 +1,6 @@
 package live.xsg.cacheoperator.common;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 系统常量
@@ -14,6 +12,8 @@ public class Constants {
     public final static String EMPTY_STRING = "";
     //空Map
     public final static Map<String, String> EMPTY_MAP = Collections.unmodifiableMap(new HashMap<>());
+    //空list
+    public final static List<String> EMPTY_LIST = Collections.unmodifiableList(new ArrayList<>());
 
     //设置正在刷新缓存标识前置
     public static String LOADING_KEY = "r_o_loading_key_";

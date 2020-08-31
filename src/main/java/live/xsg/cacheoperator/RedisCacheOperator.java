@@ -9,6 +9,7 @@ import live.xsg.cacheoperator.transport.redis.RedisTransporter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -107,6 +108,21 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
     @Override
     public void del(String key) {
         this.cacheOperatorProxy.del(key);
+    }
+
+    @Override
+    public List<String> lrange(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
+        return this.cacheOperatorProxy.lrange(key, start, end, expire, flusher);
+    }
+
+    @Override
+    public String lpop(String key, long expire, Refresher<List<String>> flusher) {
+        return this.cacheOperatorProxy.lpop(key, expire, flusher);
+    }
+
+    @Override
+    public String rpop(String key, long expire, Refresher<List<String>> flusher) {
+        return this.cacheOperatorProxy.rpop(key, expire, flusher);
     }
 
     /**
@@ -217,6 +233,21 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
         @Override
         public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
             return this.mapOperator.hgetAsync(key, field, expire, fluster, executorService);
+        }
+
+        @Override
+        public List<String> lrange(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
+            return this.listOperator.lrange(key, start, end, expire, flusher);
+        }
+
+        @Override
+        public String lpop(String key, long expire, Refresher<List<String>> flusher) {
+            return this.listOperator.lpop(key, expire, flusher);
+        }
+
+        @Override
+        public String rpop(String key, long expire, Refresher<List<String>> flusher) {
+            return this.listOperator.rpop(key, expire, flusher);
         }
     }
 
