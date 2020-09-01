@@ -27,12 +27,22 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
 
     @Override
     public String lpop(String key, long expire, Refresher<List<String>> flusher) {
-        return null;
+        List<String> lrange = this.lrange(key, 0, 0, expire, flusher, new SyncCacheExecutor<>());
+        String res = null;
+        if (!CollectionUtils.isEmpty(lrange)) {
+            res = lrange.get(0);
+        }
+        return res;
     }
 
     @Override
     public String rpop(String key, long expire, Refresher<List<String>> flusher) {
-        return null;
+        List<String> lrange = this.lrange(key, -1, -1, expire, flusher, new SyncCacheExecutor<>());
+        String res = null;
+        if (!CollectionUtils.isEmpty(lrange)) {
+            res = lrange.get(0);
+        }
+        return res;
     }
 
     @Override

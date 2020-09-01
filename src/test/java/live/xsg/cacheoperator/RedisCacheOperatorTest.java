@@ -246,6 +246,64 @@ public class RedisCacheOperatorTest {
         cacheOperator.del(key);
     }
 
+    @Test
+    public void lpop_test() throws InterruptedException {
+        String key = "fruit";
+        List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+
+        int nThread = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(nThread);
+        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
+        for (int i = 0; i < nThread; i++) {
+            executorService.submit(() -> {
+                try {
+                    String result = cacheOperator.lpop(key, EXPIRE, () -> {
+                        System.out.println("access...........................");
+                        sleep(1);
+                        return fruits;
+                    });
+                    System.out.println(result);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+        countDownLatch.await();
+        executorService.shutdown();
+        cacheOperator.del(key);
+    }
+
+    @Test
+    public void rpop_test() throws InterruptedException {
+        String key = "fruit";
+        List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
+
+        CacheOperator cacheOperator = new RedisCacheOperator();
+
+        int nThread = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(nThread);
+        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
+        for (int i = 0; i < nThread; i++) {
+            executorService.submit(() -> {
+                try {
+                    String result = cacheOperator.rpop(key, EXPIRE, () -> {
+                        System.out.println("access...........................");
+                        sleep(1);
+                        return fruits;
+                    });
+                    System.out.println(result);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+        countDownLatch.await();
+        executorService.shutdown();
+        cacheOperator.del(key);
+    }
+
     private void sleep(int second) {
         try {
             TimeUnit.SECONDS.sleep(second);
