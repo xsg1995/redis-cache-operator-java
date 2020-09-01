@@ -17,64 +17,99 @@
 - 自定义过滤器：实现前置过滤和后置过滤，前置过滤可以用于过滤部分不符合条件的key，后置过滤可以取得key与返回的结果，支持SPI或程序手动注入过滤器
 - 失败降级： 如果访问redis错误，则切断与redis的操作，走降级逻辑(自定义mock降级)，期间重试(频率30s)redis查看是否恢复，恢复则继续提供服务
 
+## 参数说明
+
+redis-cache-operator.properties文件用于存放参数配置
+
+| 参数 | 默认值 | 说明 |
+| :----:| :----: | ---- |
+| loadingKeyExpire | 120000 | 刷新缓存的最大时间，单位毫秒，同一个key在该参数指定的时间内，只能有一个线程刷新缓存数据 |
+| extendExpire | 300000 | 缓存数据保存延长时间，单位毫秒，对key的实际过期时间进行延长，当key的实际过期时间到期后，在延长时间内将返回缓存中的旧的值 |
+| retryTime | 5 | 当redis连接失败时的重试次数，如果超过重试次数还连接不上，将切断与redis的连接，执行mock降级逻辑 |
+| retryPeriod | 30000 | 当redis的连接被切断后，自动探测redis是否恢复的频率，单位毫秒 |
+| blockTime | 1000 | 当没有命中缓存且已有其他线程在正在刷新缓存时，当前线程的最大阻塞时间，单位毫秒 |
+
+
+
 ## 使用
 ### 字符串对象
-* 同步刷新缓存
+####  同步刷新缓存
+
+- 当命中缓存时返回缓存中的值；
+- 当没有命中缓存或者缓存失效时，执行业务逻辑获取数据并填充到缓存中，并将获取的值返回；
+
 ```java
 CacheOperator cacheOperator = new RedisCacheOperator();
-String key = "sayHello";
+String key = "user_name_1";
 long expire = 10 * 60 * 1000;  //10 分钟
 
-String cacheValue = cacheOperator.getString(key, expire, () -> {
+String name = cacheOperator.get(key, expire, () -> {
     //执行业务逻辑，获取值
-    String value = "hello world!";
-    return value;
+    String name = userService.getUserNameById(1);
+    return name;
 });
 ```
-* 异步刷新缓存
+#### 异步刷新缓存
+
+- 当命中缓存时返回缓存中的值；
+- 当没有命中缓存或者缓存失效时，异步执行业务逻辑获取数据并填充到缓存中，返回结果空字符串，可以通过 RedisCacheContext.getContext().getFuture() 获取异步执行的 future 对象
+
 ```java
-String key = "sayHello";
+String key = "user_name_1";
 String sourceValue = "hello world!";
 long expire = 10 * 60 * 1000;  //10 分钟
 
 CacheOperator cacheOperator = new RedisCacheOperator();
-String cacheValue = cacheOperator.getStringAsync(key, expire, () -> {
+String name = cacheOperator.getAsync(key, expire, () -> {
     //执行业务逻辑，获取值
-    return sourceValue;
+    String name = userService.getUserNameById(1);
+    return name;
 });
-//System.out.println(cacheValue);  结果为 ""
 
 //获取future对象
 Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
 if (resultFuture != null) {
     //获取到异步刷新的结果
-    String result = resultFuture.get();
+    name = resultFuture.get();
 }
 ```
-> 当缓存中无数据或者缓存中的数据没有过期时，通过RedisCacheContext.getContext().getFuture()获取到future将为null
+> 当缓存中的数据没有过期时，通过RedisCacheContext.getContext().getFuture()获取到future将为null
+
 ### map对象
-* 同步刷新缓存
+####  同步刷新缓存
+
+- 当命中缓存时返回缓存中的值；
+- 当没有命中缓存或者缓存失效时，执行业务逻辑获取数据并填充到缓存中，并将获取的值返回；
+
 ```java
 CacheOperator cacheOperator = new RedisCacheOperator();
 
-String mapKey = "mapKey";
+String mapKey = "user_1";
 long expire = 10 * 60 * 1000;  //10 分钟
-Map<String, String> res = cacheOperator.getAllMap(mapKey, expire, () -> {
+Map<String, String> res = cacheOperator.hgetAll(mapKey, expire, () -> {
     //执行业务逻辑，获取值
     Map<String, String> data = new HashMap<>();
-    data.put("value", "mapValue");
+    data.put("id", "1");
+    data.put("name", "zhangsan");
     return data;
 });
 ```
-* 异步刷新缓存
+#### 异步刷新缓存
+- 当命中缓存时返回缓存中的值；
+- 当没有命中缓存或者缓存失效时，异步执行业务逻辑获取数据并填充到缓存中，返回结果空的HashMap对象，可以通过 RedisCacheContext.getContext().getFuture() 获取异步执行的 future 对象
+
 ```java
-String mapKey = "mapKey";
-Map<String, String> mockData = new HashMap<>();
-mockData.put("value", "mapValue");
+String mapKey = "user_1";
+long expire = 10 * 60 * 1000;  //10 分钟
 
 CacheOperator cacheOperator = new RedisCacheOperator();
-Map<String, String> res = cacheOperator.getAllMapAsync(mapKey, EXPIRE, () -> mockData);
-//System.out.println(cacheValue);  结果为空的HashMap
+Map<String, String> res = cacheOperator.hgetAllAsync(mapKey, expire, () -> {
+    //执行业务逻辑，获取值
+    Map<String, String> data = new HashMap<>();
+    data.put("id", "1");
+    data.put("name", "zhangsan");
+    return data;
+});
 
 //获取future对象
 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture();
@@ -83,22 +118,37 @@ if (future != null) {
     Map<String, String> result = future.get(); 
 }
 ```
-> 当缓存中无数据或者缓存中的数据没有过期时，通过RedisCacheContext.getContext().getFuture()获取到future将为null
+> 当缓存中的数据没有过期时，通过RedisCacheContext.getContext().getFuture()获取到future将为null
+
 ### mock降级使用
+
+#### 使用mock降级的时机
+- 当redis连接不上时，对数据的操作将走Mock降级逻辑，可以根据key来获取降级数据
+- 当请求在blockTime指定的最大阻塞时间过后仍然获取不到数据时，对数据的操作将走Mock降级逻辑，可以根据key来获取降级数据
+
+#### 使用方式
 * 方式一：使用SPI，则在META-INF/services/live.xsg.cacheoperator.mock.Mock文件中添加Mock实现类
 * 方式二：代码注入mock降级逻辑
+
 ```java
-String key = "sayHello";
+String key = "user_name_1";
 
 MockRegister.getInstance().register((k, cacheOperator, method) -> {
     if (key.equals(k)) {
-        return "i am mock value.";
+        return "zhangsan";
     }
     return null;
 });
 ```
 > Mock实现类可以实现Order接口指定调用顺序
+
 ### filter过滤器使用
+
+#### 执行filter的时机
+- 在每个key操作执行前，会先执行过滤器的preFilter方法，如果返回false，将不会执行后续的逻辑
+- 在每个key操作执行后，会将key与获取的结果传入postFilter中
+
+#### 使用方式
 * 方式一：使用SPI，则在META-INF/services/live.xsg.cacheoperator.filter.Filter文件中添加Filter实现类
 * 方式二：代码注入filter实现逻辑
 ```java
