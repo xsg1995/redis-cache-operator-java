@@ -39,7 +39,7 @@ redis-cache-operator.properties文件用于存放参数配置
 - 当没有命中缓存或者缓存失效时，执行业务逻辑获取数据并填充到缓存中，并将获取的值返回；
 
 ```java
-CacheOperator cacheOperator = new RedisCacheOperator();
+CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 String key = "user_name_1";
 long expire = 10 * 60 * 1000;  //10 分钟
 
@@ -52,14 +52,14 @@ String name = cacheOperator.get(key, expire, () -> {
 #### 异步刷新缓存
 
 - 当命中缓存时返回缓存中的值；
-- 当没有命中缓存或者缓存失效时，异步执行业务逻辑获取数据并填充到缓存中，返回结果空字符串，可以通过 RedisCacheContext.getContext().getFuture() 获取异步执行的 future 对象
+- 当没有命中缓存或者缓存失效时，异步执行业务逻辑获取数据并填充到缓存中，结果返回空字符串，可以通过 RedisCacheContext.getContext().getFuture() 获取异步执行的 future 对象
 
 ```java
 String key = "user_name_1";
 String sourceValue = "hello world!";
 long expire = 10 * 60 * 1000;  //10 分钟
 
-CacheOperator cacheOperator = new RedisCacheOperator();
+CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 String name = cacheOperator.getAsync(key, expire, () -> {
     //执行业务逻辑，获取值
     String name = userService.getUserNameById(1);
@@ -82,7 +82,7 @@ if (resultFuture != null) {
 - 当没有命中缓存或者缓存失效时，执行业务逻辑获取数据并填充到缓存中，并将获取的值返回；
 
 ```java
-CacheOperator cacheOperator = new RedisCacheOperator();
+CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 
 String mapKey = "user_1";
 long expire = 10 * 60 * 1000;  //10 分钟
@@ -96,13 +96,13 @@ Map<String, String> res = cacheOperator.hgetAll(mapKey, expire, () -> {
 ```
 #### 异步刷新缓存
 - 当命中缓存时返回缓存中的值；
-- 当没有命中缓存或者缓存失效时，异步执行业务逻辑获取数据并填充到缓存中，返回结果空的HashMap对象，可以通过 RedisCacheContext.getContext().getFuture() 获取异步执行的 future 对象
+- 当没有命中缓存或者缓存失效时，异步执行业务逻辑获取数据并填充到缓存中，结果返回空的HashMap对象，可以通过 RedisCacheContext.getContext().getFuture() 获取异步执行的 future 对象
 
 ```java
 String mapKey = "user_1";
 long expire = 10 * 60 * 1000;  //10 分钟
 
-CacheOperator cacheOperator = new RedisCacheOperator();
+CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 Map<String, String> res = cacheOperator.hgetAllAsync(mapKey, expire, () -> {
     //执行业务逻辑，获取值
     Map<String, String> data = new HashMap<>();
@@ -115,10 +115,51 @@ Map<String, String> res = cacheOperator.hgetAllAsync(mapKey, expire, () -> {
 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture();
 if (future != null) {
     //获取到异步刷新的结果
-    Map<String, String> result = future.get(); 
+    res = future.get(); 
 }
 ```
 > 当缓存中的数据没有过期时，通过RedisCacheContext.getContext().getFuture()获取到future将为null
+
+### list对象
+
+####  同步刷新缓存
+
+- 当命中缓存时返回缓存中的值；
+- 当没有命中缓存或者缓存失效时，执行业务逻辑获取数据并填充到缓存中，并将获取的值返回；
+
+```java
+CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+
+String key = "fruit";
+long expire = 10 * 60 * 1000;  //10 分钟
+List<String> result = cacheOperator.lrange(key, 0, -1, expire, () -> {
+    //执行业务逻辑，获取值
+    List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
+    return fruits;
+});
+```
+
+#### 异步刷新缓存
+- 当命中缓存时返回缓存中的值；
+- 当没有命中缓存或者缓存失效时，异步执行业务逻辑获取数据并填充到缓存中，返回null，可以通过 RedisCacheContext.getContext().getFuture() 获取异步执行的 future 对象
+
+```java
+String key = "fruit";
+long expire = 10 * 60 * 1000;  //10 分钟
+
+List<String> result = cacheOperator.lrange(key, 0, -1, expire, () -> {
+    //执行业务逻辑，获取值
+    List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
+    return fruits;
+});
+
+//获取future对象
+Future<List<String>> future = RedisCacheContext.getContext().getFuture();
+if (future != null) {
+    //获取到异步刷新的结果
+    result = future.get(); 
+}
+```
 
 ### mock降级使用
 

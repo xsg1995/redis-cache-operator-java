@@ -17,113 +17,48 @@ import java.util.concurrent.ExecutorService;
  * redis缓存操作器
  * Created by xsg on 2020/7/20.
  */
-public class RedisCacheOperator extends AbstractCacheOperator implements CacheOperator {
+public class RedisCacheOperator {
 
-    private CacheOperator cacheOperatorProxy;
+    //CacheOperator具体实现
+    private InnerRedisCacheOperator innerRedisCacheOperator;
 
-    public RedisCacheOperator() {
-        this(new RedisTransporter(), new PropertiesResourceLoader());
-    }
-
-    public RedisCacheOperator(Transporter transporter) {
-        this(transporter, new PropertiesResourceLoader());
-    }
-
-    public RedisCacheOperator(ResourceLoader resourceLoader) {
-        this(new RedisTransporter(), resourceLoader);
-    }
-
-    public RedisCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
-        super(transporter, resourceLoader);
-        this.cacheOperatorProxy = this.newProxy(new InnerRedisCacheOperator(transporter, resourceLoader));
+    private RedisCacheOperator(Builder builder) {
+        innerRedisCacheOperator = new InnerRedisCacheOperator(builder.transporter, builder.resourceLoader);
     }
 
     /**
      * 创建代理
      */
-    public CacheOperator newProxy(InnerRedisCacheOperator cacheOperator) {
-        return (CacheOperator) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[] {CacheOperator.class}, cacheOperator);
+    public CacheOperator createProxy() {
+        return (CacheOperator) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[] {CacheOperator.class}, this.innerRedisCacheOperator);
     }
 
-    @Override
-    public String get(String key, long expire, Refresher<String> flusher) {
-        return this.cacheOperatorProxy.get(key, expire, flusher);
+    /**
+     * builder模式
+     */
+    public static class Builder {
+        private Transporter transporter = new RedisTransporter();
+        private ResourceLoader resourceLoader = new PropertiesResourceLoader();
+
+        /**
+         * 创建对象
+         * @return CacheOperator 实现
+         */
+        public CacheOperator build() {
+            RedisCacheOperator redisCacheOperator = new RedisCacheOperator(this);
+            return redisCacheOperator.createProxy();
+        }
+
+        public void setTransporter(Transporter transporter) {
+            this.transporter = transporter;
+        }
+
+        public void setResourceLoader(ResourceLoader resourceLoader) {
+            this.resourceLoader = resourceLoader;
+        }
+
     }
 
-    @Override
-    public String getAsync(String key, long expire, Refresher<String> flusher) {
-        return this.cacheOperatorProxy.getAsync(key, expire, flusher);
-    }
-
-    @Override
-    public String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
-        return this.cacheOperatorProxy.getAsync(key, expire, flusher, executorService);
-    }
-
-    @Override
-    public String get(String key) {
-        return this.cacheOperatorProxy.get(key);
-    }
-
-    @Override
-    public Map<String, String> hgetAll(String key) {
-        return this.cacheOperatorProxy.hgetAll(key);
-    }
-
-    @Override
-    public Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher) {
-        return this.cacheOperatorProxy.hgetAll(key, expire, flusher);
-    }
-
-    @Override
-    public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
-        return this.cacheOperatorProxy.hgetAllAsync(key, expire, flusher);
-    }
-
-    @Override
-    public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
-        return this.cacheOperatorProxy.hgetAllAsync(key, expire, flusher, executorService);
-    }
-
-    @Override
-    public String hget(String key, String field) {
-        return this.cacheOperatorProxy.hget(key, field);
-    }
-
-    @Override
-    public String hget(String key, String field, long expire, Refresher<Map<String, String>> flusher) {
-        return this.hget(key, field, expire, flusher);
-    }
-
-    @Override
-    public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
-        return this.cacheOperatorProxy.hgetAsync(key, field, expire, fluster);
-    }
-
-    @Override
-    public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
-        return this.cacheOperatorProxy.hgetAsync(key, field, expire, fluster, executorService);
-    }
-
-    @Override
-    public void del(String key) {
-        this.cacheOperatorProxy.del(key);
-    }
-
-    @Override
-    public List<String> lrange(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
-        return this.cacheOperatorProxy.lrange(key, start, end, expire, flusher);
-    }
-
-    @Override
-    public String lpop(String key, long expire, Refresher<List<String>> flusher) {
-        return this.cacheOperatorProxy.lpop(key, expire, flusher);
-    }
-
-    @Override
-    public String rpop(String key, long expire, Refresher<List<String>> flusher) {
-        return this.cacheOperatorProxy.rpop(key, expire, flusher);
-    }
 
     /**
      * 内部类，实现 InvocationHandler，实现代理，控制访问
@@ -248,6 +183,36 @@ public class RedisCacheOperator extends AbstractCacheOperator implements CacheOp
         @Override
         public String rpop(String key, long expire, Refresher<List<String>> flusher) {
             return this.listOperator.rpop(key, expire, flusher);
+        }
+
+        @Override
+        public List<String> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
+            return this.listOperator.lrangeAsync(key, start, end, expire, flusher);
+        }
+
+        @Override
+        public List<String> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+            return this.listOperator.lrangeAsync(key, start, end, expire, flusher, executorService);
+        }
+
+        @Override
+        public String lpopAsync(String key, long expire, Refresher<List<String>> flusher) {
+            return this.listOperator.lpopAsync(key, expire, flusher);
+        }
+
+        @Override
+        public String lpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+            return this.listOperator.lpopAsync(key, expire, flusher, executorService);
+        }
+
+        @Override
+        public String rpopAsync(String key, long expire, Refresher<List<String>> flusher) {
+            return this.listOperator.rpopAsync(key, expire, flusher);
+        }
+
+        @Override
+        public String rpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+            return this.listOperator.rpopAsync(key, expire, flusher, executorService);
         }
     }
 

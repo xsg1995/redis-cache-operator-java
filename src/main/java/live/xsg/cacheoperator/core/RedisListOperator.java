@@ -1,6 +1,7 @@
 package live.xsg.cacheoperator.core;
 
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
@@ -9,12 +10,16 @@ import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.utils.CollectionUtils;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 /**
  * list类型操作实现
  * Created by xsg on 2020/8/28.
  */
 public class RedisListOperator extends AbstractRedisOperator implements ListOperator {
+
+    //异步任务执行器
+    protected CacheExecutor<List<String>> asyncCacheExecutor = new AsyncCacheExecutor();
 
     public RedisListOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(transporter, resourceLoader);
@@ -38,6 +43,56 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
     @Override
     public String rpop(String key, long expire, Refresher<List<String>> flusher) {
         List<String> lrange = this.lrange(key, -1, -1, expire, flusher, new SyncCacheExecutor<>());
+        String res = null;
+        if (!CollectionUtils.isEmpty(lrange)) {
+            res = lrange.get(0);
+        }
+        return res;
+    }
+
+    @Override
+    public List<String> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
+        return this.lrange(key, start, end, expire, flusher, this.asyncCacheExecutor);
+    }
+
+    @Override
+    public List<String> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+        return this.lrange(key, start, end, expire, flusher, new AsyncCacheExecutor<>(executorService));
+    }
+
+    @Override
+    public String lpopAsync(String key, long expire, Refresher<List<String>> flusher) {
+        List<String> lrange = this.lrange(key, 0, 0, expire, flusher, this.asyncCacheExecutor);
+        String res = null;
+        if (!CollectionUtils.isEmpty(lrange)) {
+            res = lrange.get(0);
+        }
+        return res;
+    }
+
+    @Override
+    public String lpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+        List<String> lrange = this.lrange(key, 0, 0, expire, flusher, new AsyncCacheExecutor<>(executorService));
+        String res = null;
+        if (!CollectionUtils.isEmpty(lrange)) {
+            res = lrange.get(0);
+        }
+        return res;
+    }
+
+    @Override
+    public String rpopAsync(String key, long expire, Refresher<List<String>> flusher) {
+        List<String> lrange = this.lrange(key, -1, -1, expire, flusher, this.asyncCacheExecutor);
+        String res = null;
+        if (!CollectionUtils.isEmpty(lrange)) {
+            res = lrange.get(0);
+        }
+        return res;
+    }
+
+    @Override
+    public String rpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+        List<String> lrange = this.lrange(key, -1, -1, expire, flusher, new AsyncCacheExecutor<>(executorService));
         String res = null;
         if (!CollectionUtils.isEmpty(lrange)) {
             res = lrange.get(0);

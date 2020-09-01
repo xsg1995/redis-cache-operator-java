@@ -26,7 +26,7 @@ public class RedisCacheOperatorTest {
         String sourceValue = "hello world!";
         long expire = 10 * 60 * 1000;  //10 分钟
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
         String cacheValue = cacheOperator.get(key, expire, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
@@ -42,7 +42,7 @@ public class RedisCacheOperatorTest {
         String sourceValue = "hello world!";
         long expire = 10 * 60 * 1000;  //10 分钟
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
         String cacheValue = cacheOperator.getAsync(key, expire, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
@@ -70,7 +70,7 @@ public class RedisCacheOperatorTest {
             return null;
         });
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
         String cacheValue = cacheOperator.get(key, EXPIRE, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
@@ -98,7 +98,7 @@ public class RedisCacheOperatorTest {
         });
 
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 
         String ignoreValue = cacheOperator.get(ignoreKey, EXPIRE, () -> {
             //执行业务逻辑，获取值
@@ -119,7 +119,7 @@ public class RedisCacheOperatorTest {
     @Test
     public void getAllMap_test() {
         String mapKey = "mapKey";
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
         Map<String, String> resMap = cacheOperator.hgetAll(mapKey);
         assertEquals(resMap, Constants.EMPTY_MAP);
     }
@@ -130,7 +130,7 @@ public class RedisCacheOperatorTest {
         Map<String, String> mockData = new HashMap<>();
         mockData.put("value", "mapValue");
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
         Map<String, String> res = cacheOperator.hgetAll(mapKey, EXPIRE, () -> mockData);
 
         assertEquals(res, mockData);
@@ -144,7 +144,7 @@ public class RedisCacheOperatorTest {
         Map<String, String> mockData = new HashMap<>();
         mockData.put("value", "mapValue");
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
         Map<String, String> res = cacheOperator.hgetAllAsync(mapKey, EXPIRE, () -> mockData);
 
         assertEquals(res, Constants.EMPTY_MAP);
@@ -159,7 +159,7 @@ public class RedisCacheOperatorTest {
     @Test
     public void getString_with_block_test() throws InterruptedException {
         String key = "hello";
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 
         int nThread = 10;
         CountDownLatch countDownLatch = new CountDownLatch(nThread);
@@ -186,7 +186,7 @@ public class RedisCacheOperatorTest {
     public void hget_test() {
         String key = "hgetKey";
         String field = "hgetField";
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
         String result = cacheOperator.hget(key, field);
 
         assertEquals(result, "");
@@ -198,7 +198,7 @@ public class RedisCacheOperatorTest {
         Map<String, String> mockData = new HashMap<>();
         mockData.put("value", "mapValue");
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
         String value = cacheOperator.hgetAsync(mapKey, "value", EXPIRE, () -> mockData);
         assertEquals(value, Constants.EMPTY_STRING);
 
@@ -222,7 +222,7 @@ public class RedisCacheOperatorTest {
             return null;
         });
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 
         int nThread = 10;
         CountDownLatch countDownLatch = new CountDownLatch(nThread);
@@ -251,7 +251,7 @@ public class RedisCacheOperatorTest {
         String key = "fruit";
         List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 
         int nThread = 10;
         CountDownLatch countDownLatch = new CountDownLatch(nThread);
@@ -280,7 +280,7 @@ public class RedisCacheOperatorTest {
         String key = "fruit";
         List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
 
-        CacheOperator cacheOperator = new RedisCacheOperator();
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 
         int nThread = 10;
         CountDownLatch countDownLatch = new CountDownLatch(nThread);
@@ -294,6 +294,40 @@ public class RedisCacheOperatorTest {
                         return fruits;
                     });
                     System.out.println(result);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+        countDownLatch.await();
+        executorService.shutdown();
+        cacheOperator.del(key);
+    }
+
+    @Test
+    public void lrangeAsync_test() throws InterruptedException {
+        String key = "fruit";
+        List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
+
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+
+        int nThread = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(nThread);
+        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
+        for (int i = 0; i < nThread; i++) {
+            executorService.submit(() -> {
+                try {
+                    List<String> result = cacheOperator.lrangeAsync(key, 0, -1, EXPIRE, () -> {
+                        System.out.println("access...........................");
+                        sleep(1);
+                        return fruits;
+                    });
+                    System.out.println("同步返回:" + result);
+                    Future<List<String>> future = RedisCacheContext.getContext().getFuture();
+                    if (future != null) {
+                        System.out.println("异步执行结果:" + future.get());
+                    }
+                } catch (InterruptedException | ExecutionException ignored) {
                 } finally {
                     countDownLatch.countDown();
                 }
