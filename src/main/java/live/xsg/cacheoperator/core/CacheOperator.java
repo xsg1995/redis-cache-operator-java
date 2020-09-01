@@ -1,8 +1,4 @@
-package live.xsg.cacheoperator;
-
-import live.xsg.cacheoperator.core.ListOperator;
-import live.xsg.cacheoperator.core.MapOperator;
-import live.xsg.cacheoperator.core.StringOperator;
+package live.xsg.cacheoperator.core;
 
 /**
  * 缓存操作器

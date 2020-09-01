@@ -1,5 +1,7 @@
 package live.xsg.cacheoperator;
 
+import live.xsg.cacheoperator.core.AbstractCacheOperator;
+import live.xsg.cacheoperator.core.CacheOperator;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.loader.PropertiesResourceLoader;
 import live.xsg.cacheoperator.loader.ResourceLoader;
@@ -21,6 +23,8 @@ public class RedisCacheOperator {
 
     //CacheOperator具体实现
     private InnerRedisCacheOperator innerRedisCacheOperator;
+
+    private RedisCacheOperator(){}
 
     private RedisCacheOperator(Builder builder) {
         innerRedisCacheOperator = new InnerRedisCacheOperator(builder.transporter, builder.resourceLoader);

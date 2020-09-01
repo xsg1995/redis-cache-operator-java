@@ -2,6 +2,7 @@ package live.xsg.cacheoperator;
 
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.context.RedisCacheContext;
+import live.xsg.cacheoperator.core.CacheOperator;
 import live.xsg.cacheoperator.filter.Filter;
 import live.xsg.cacheoperator.filter.FilterChain;
 import live.xsg.cacheoperator.mock.MockRegister;

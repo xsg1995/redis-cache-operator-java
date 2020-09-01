@@ -1,6 +1,6 @@
 package live.xsg.cacheoperator.support;
 
-import live.xsg.cacheoperator.CacheOperator;
+import live.xsg.cacheoperator.core.CacheOperator;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.exception.RetryRecoverException;
 import live.xsg.cacheoperator.mock.Mock;
