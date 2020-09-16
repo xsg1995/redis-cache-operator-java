@@ -158,28 +158,20 @@ public class RedisCacheOperatorTest {
     }
 
     @Test
-    public void getString_with_block_test() throws InterruptedException {
+    public void getString_with_block_test() {
         String key = "hello";
-        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
 
-        int nThread = 10;
-        CountDownLatch countDownLatch = new CountDownLatch(nThread);
-        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
-        for (int i = 0; i < nThread; i++) {
-            executorService.submit(() -> {
-                try {
-                    String value = cacheOperator.get(key, EXPIRE, () -> {
-                        sleep(10);
-                        return "redis-cache-operator-java";
-                    });
-                    System.out.println("result:" + value);
-                } finally {
-                    countDownLatch.countDown();
-                }
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
+
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(10, () -> {
+            String value = cacheOperator.get(key, EXPIRE, () -> {
+                sleep(10);
+                return "redis-cache-operator-java";
             });
-        }
-        countDownLatch.await();
-        executorService.shutdown();
+            System.out.println("result:" + value);
+        });
         cacheOperator.del(key);
     }
 
@@ -224,26 +216,18 @@ public class RedisCacheOperatorTest {
         });
 
         CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
-        int nThread = 10;
-        CountDownLatch countDownLatch = new CountDownLatch(nThread);
-        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
-        for (int i = 0; i < nThread; i++) {
-            executorService.submit(() -> {
-                try {
-                    List<String> result = cacheOperator.lrange(key, 0, -1, EXPIRE, () -> {
-                        System.out.println("access...........................");
-                        sleep(1);
-                        return fruits;
-                    });
-                    System.out.println(result);
-                } finally {
-                    countDownLatch.countDown();
-                }
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(10, () -> {
+            List<String> result = cacheOperator.lrange(key, 0, -1, EXPIRE, () -> {
+                System.out.println("access...........................");
+                sleep(1);
+                return fruits;
             });
-        }
-        countDownLatch.await();
-        executorService.shutdown();
+            System.out.println(result);
+        });
+
         cacheOperator.del(key);
     }
 
@@ -253,26 +237,18 @@ public class RedisCacheOperatorTest {
         List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
 
         CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
-        int nThread = 10;
-        CountDownLatch countDownLatch = new CountDownLatch(nThread);
-        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
-        for (int i = 0; i < nThread; i++) {
-            executorService.submit(() -> {
-                try {
-                    String result = cacheOperator.lpop(key, EXPIRE, () -> {
-                        System.out.println("access...........................");
-                        sleep(1);
-                        return fruits;
-                    });
-                    System.out.println(result);
-                } finally {
-                    countDownLatch.countDown();
-                }
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(10, () -> {
+            String result = cacheOperator.lpop(key, EXPIRE, () -> {
+                System.out.println("access...........................");
+                sleep(1);
+                return fruits;
             });
-        }
-        countDownLatch.await();
-        executorService.shutdown();
+            System.out.println(result);
+        });
+
         cacheOperator.del(key);
     }
 
@@ -282,26 +258,17 @@ public class RedisCacheOperatorTest {
         List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
 
         CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
-        int nThread = 10;
-        CountDownLatch countDownLatch = new CountDownLatch(nThread);
-        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
-        for (int i = 0; i < nThread; i++) {
-            executorService.submit(() -> {
-                try {
-                    String result = cacheOperator.rpop(key, EXPIRE, () -> {
-                        System.out.println("access...........................");
-                        sleep(1);
-                        return fruits;
-                    });
-                    System.out.println(result);
-                } finally {
-                    countDownLatch.countDown();
-                }
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(10, () -> {
+            String result = cacheOperator.rpop(key, EXPIRE, () -> {
+                System.out.println("access...........................");
+                sleep(1);
+                return fruits;
             });
-        }
-        countDownLatch.await();
-        executorService.shutdown();
+            System.out.println(result);
+        });
         cacheOperator.del(key);
     }
 
@@ -311,37 +278,88 @@ public class RedisCacheOperatorTest {
         List<String> fruits = Arrays.asList("apple", "peach", "lemon", "pear");
 
         CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
-        int nThread = 10;
-        CountDownLatch countDownLatch = new CountDownLatch(nThread);
-        ExecutorService executorService = Executors.newFixedThreadPool(nThread);
-        for (int i = 0; i < nThread; i++) {
-            executorService.submit(() -> {
-                try {
-                    List<String> result = cacheOperator.lrangeAsync(key, 0, -1, EXPIRE, () -> {
-                        System.out.println("access...........................");
-                        sleep(1);
-                        return fruits;
-                    });
-                    System.out.println("同步返回:" + result);
-                    Future<List<String>> future = RedisCacheContext.getContext().getFuture();
-                    if (future != null) {
-                        System.out.println("异步执行结果:" + future.get());
-                    }
-                } catch (InterruptedException | ExecutionException ignored) {
-                } finally {
-                    countDownLatch.countDown();
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(10, () -> {
+            try {
+                List<String> result = cacheOperator.lrangeAsync(key, 0, -1, EXPIRE, () -> {
+                    System.out.println("access...........................");
+                    sleep(1);
+                    return fruits;
+                });
+                System.out.println("同步返回:" + result);
+                Future<List<String>> future = RedisCacheContext.getContext().getFuture();
+                if (future != null) {
+                    System.out.println("异步执行结果:" + future.get());
                 }
+            } catch (InterruptedException | ExecutionException ignored) {
+            }
+        });
+
+        cacheOperator.del(key);
+    }
+
+    @Test
+    public void smembers_test() {
+        String key = "fruit";
+        Set<String> fruits = new HashSet<>();
+        fruits.add("apple");
+        fruits.add("peach");
+        fruits.add("lemon");
+
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
+
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(10, () -> {
+            Set<String> smembers = cacheOperator.smembers(key, EXPIRE, () -> {
+                System.out.println("access.....................");
+                return fruits;
             });
-        }
-        countDownLatch.await();
-        executorService.shutdown();
+            System.out.println(Thread.currentThread().getName() + " 获取结果:" + smembers);
+        });
+        cacheOperator.del(key);
+    }
+
+    @Test
+    public void smembersAsync_test() {
+        String key = "fruit";
+        Set<String> fruits = new HashSet<>();
+        fruits.add("apple");
+        fruits.add("peach");
+        fruits.add("lemon");
+
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
+
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(10, () -> {
+            try {
+                cacheOperator.smembersAsync(key, EXPIRE, () -> {
+                    System.out.println("access.....................");
+                    sleep(50L);
+                    return fruits;
+                });
+                Future<Set<String>> future = RedisCacheContext.getContext().getFuture();
+                if (future != null) {
+                    System.out.println(Thread.currentThread().getName() + " 异步执行结果:" + future.get());
+                }
+            } catch (Exception ignored) {}
+        });
         cacheOperator.del(key);
     }
 
     private void sleep(int second) {
         try {
             TimeUnit.SECONDS.sleep(second);
+        } catch (InterruptedException e) {
+        }
+    }
+
+    private void sleep(long mill) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(mill);
         } catch (InterruptedException e) {
         }
     }

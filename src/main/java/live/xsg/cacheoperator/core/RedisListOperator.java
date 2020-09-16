@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutorService;
 public class RedisListOperator extends AbstractRedisOperator implements ListOperator {
 
     //异步任务执行器
-    protected CacheExecutor<List<String>> asyncCacheExecutor = new AsyncCacheExecutor();
+    protected CacheExecutor<List<String>> asyncCacheExecutor = new AsyncCacheExecutor<>();
 
     public RedisListOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(transporter, resourceLoader);

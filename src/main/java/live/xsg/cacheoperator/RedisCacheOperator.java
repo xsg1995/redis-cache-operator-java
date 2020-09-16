@@ -6,13 +6,14 @@ import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.loader.PropertiesResourceLoader;
 import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.transport.Transporter;
-import live.xsg.cacheoperator.transport.redis.RedisTransporter;
+import live.xsg.cacheoperator.transport.redis.JedisTransporter;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -33,7 +34,7 @@ public class RedisCacheOperator {
     /**
      * 创建代理
      */
-    public CacheOperator createProxy() {
+    private CacheOperator createProxy() {
         return (CacheOperator) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[] {CacheOperator.class}, this.innerRedisCacheOperator);
     }
 
@@ -41,7 +42,7 @@ public class RedisCacheOperator {
      * builder模式
      */
     public static class Builder {
-        private Transporter transporter = new RedisTransporter();
+        private Transporter transporter = new JedisTransporter();
         private ResourceLoader resourceLoader = new PropertiesResourceLoader();
 
         /**
@@ -67,7 +68,7 @@ public class RedisCacheOperator {
     /**
      * 内部类，实现 InvocationHandler，实现代理，控制访问
      */
-    static class InnerRedisCacheOperator extends AbstractCacheOperator implements CacheOperator, InvocationHandler {
+    private static class InnerRedisCacheOperator extends AbstractCacheOperator implements CacheOperator, InvocationHandler {
 
         public InnerRedisCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
             super(transporter, resourceLoader);
@@ -217,6 +218,21 @@ public class RedisCacheOperator {
         @Override
         public String rpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
             return this.listOperator.rpopAsync(key, expire, flusher, executorService);
+        }
+
+        @Override
+        public Set<String> smembers(String key, long expire, Refresher<Set<String>> flusher) {
+            return this.setOperator.smembers(key, expire, flusher);
+        }
+
+        @Override
+        public Set<String> smembersAsync(String key, long expire, Refresher<Set<String>> flusher) {
+            return this.setOperator.smembersAsync(key, expire, flusher);
+        }
+
+        @Override
+        public Set<String> smembersAsync(String key, long expire, Refresher<Set<String>> flusher, ExecutorService executorService) {
+            return this.smembersAsync(key, expire, flusher, executorService);
         }
     }
 

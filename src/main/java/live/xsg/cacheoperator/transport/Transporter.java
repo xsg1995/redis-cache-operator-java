@@ -2,6 +2,7 @@ package live.xsg.cacheoperator.transport;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 与缓存服务器交互接口
@@ -29,21 +30,15 @@ public interface Transporter {
      * @param key key
      * @param value value
      * @param expire 过期时间,单位:ms
-     * @return 设置成功，返回 1，否则返回 2
+     * @return 设置成功，返回 true，否则返回 false
      */
-    int setIfNotExist(String key, String value, long expire);
+    boolean setIfNotExist(String key, String value, long expire);
 
     /**
      * 删除key值
      * @param key key
      */
     void del(String key);
-
-    /**
-     * 累加
-     * @param key key
-     */
-    void incr(String key);
 
     /**
      * 设置key的过期时间
@@ -66,14 +61,6 @@ public interface Transporter {
      * @param data data
      */
     void hset(String key, long expire, Map<String, String> data);
-
-    /**
-     * 获取map中的某个字段的值
-     * @param key map对应的key
-     * @param field map中某个字段的key
-     * @return map中对应字段的值
-     */
-    String hget(String key, String field);
 
     /**
      * 获取多个map中的字段
@@ -107,4 +94,20 @@ public interface Transporter {
      * @return 存在返回true，否则返回false
      */
     boolean exists(String key);
+
+    /**
+     * 获取 redis 的 set 类型数据
+     * @param key key
+     * @return Set
+     */
+    Set<String> smembers(String key);
+
+    /**
+     * 设置set类型的数据
+     * @param key key
+     * @param expire 过期时间
+     * @param member 要设置得值数组
+     * @return 结果
+     */
+    Long sadd(String key, long expire, String... member);
 }

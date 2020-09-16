@@ -7,7 +7,7 @@ import live.xsg.cacheoperator.mock.MockRegister;
 import live.xsg.cacheoperator.resource.Resource;
 import live.xsg.cacheoperator.resource.ResourceRegister;
 import live.xsg.cacheoperator.transport.Transporter;
-import live.xsg.cacheoperator.transport.redis.RedisTransporter;
+import live.xsg.cacheoperator.transport.redis.JedisTransporter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,7 +39,8 @@ public class FailbackCacheOperator {
     //当前失败重试次数
     private AtomicInteger currRetryTime = new AtomicInteger();
     //定时检测redis是否恢复
-    private ScheduledExecutorService checkExecutor = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService checkExecutor = Executors.newScheduledThreadPool(1);
+    //
     private ScheduledFuture<?> checkFuture;
     //redis底层连接
     private Transporter transporter;
@@ -57,7 +58,7 @@ public class FailbackCacheOperator {
             this.retryPeriod = this.resource.getLong(Constants.RETRY_PERIOD, DEFAULT_RETRY_PERIOD);
         }
 
-        this.transporter = new RedisTransporter();
+        this.transporter = new JedisTransporter();
     }
 
     public Object invoke(Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
@@ -88,13 +89,17 @@ public class FailbackCacheOperator {
      */
     protected void addScheduleCheckRecover() {
         if (this.checkFuture == null) {
-            this.checkFuture = checkExecutor.scheduleWithFixedDelay(() -> {
-                try {
-                    checkRecover();
-                } catch (Throwable t) {
-                    t.printStackTrace();
+            synchronized (this.checkExecutor) {
+                if (this.checkFuture == null) {
+                    this.checkFuture = checkExecutor.scheduleWithFixedDelay(() -> {
+                        try {
+                            checkRecover();
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                        }
+                    }, retryPeriod, retryPeriod, TimeUnit.MILLISECONDS);
                 }
-            }, retryPeriod, retryPeriod, TimeUnit.MILLISECONDS);
+            }
         }
     }
 

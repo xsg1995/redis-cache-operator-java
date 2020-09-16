@@ -21,7 +21,7 @@ public class Constants {
     //服务端返回 1
     public static int RESULT_SUCCESS = 1;
 
-    //服务端返回 2
+    //服务端返回 0
     public static int RESULT_FAILURE = 0;
 
     //缓存时间过期时间常量，标识没有过期时间的数据

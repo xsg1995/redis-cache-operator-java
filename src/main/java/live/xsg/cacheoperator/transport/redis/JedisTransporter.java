@@ -1,37 +1,33 @@
 package live.xsg.cacheoperator.transport.redis;
 
-import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.utils.MapUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 与redis交互底层接口
  * Created by xsg on 2020/7/20.
  */
-public class RedisTransporter implements Transporter {
+public class JedisTransporter implements Transporter {
 
     private JedisPool jedisPool;
 
-    public RedisTransporter() {
+    public JedisTransporter() {
         this(new CacheOperatorJedisPoolConfig());
     }
 
-    public RedisTransporter(GenericObjectPoolConfig poolConfig) {
+    public JedisTransporter(GenericObjectPoolConfig poolConfig) {
         String host = CacheOperatorJedisPoolConfig.host;
         int port = CacheOperatorJedisPoolConfig.port;
         int timeout = CacheOperatorJedisPoolConfig.timeOut;
         this.jedisPool = new JedisPool(poolConfig, host, port, timeout);
     }
 
-    public RedisTransporter(JedisPool jedisPool) {
+    public JedisTransporter(JedisPool jedisPool) {
         this.jedisPool = jedisPool;
     }
 
@@ -46,25 +42,28 @@ public class RedisTransporter implements Transporter {
     }
 
     @Override
-    public int setIfNotExist(String key, String value, long expire) {
-        return execute((jedis) -> {
-            int res = Integer.parseInt(jedis.setnx(key, value).toString());
-            if (res == Constants.RESULT_SUCCESS) {
-                //设置过期时间
-                jedis.pexpire(key, expire);
-            }
-            return res;
+    public boolean setIfNotExist(String key, String value, long expire) {
+        String script =
+                "local key = KEYS[1] " +
+                        "local value = ARGV[1] " +
+                        "local expire = ARGV[2] " +
+                        "if redis.call('exists', key) == 1 then " +
+                        "   return 0 " +
+                        "else " +
+                        "   redis.call('set', key, value)" +
+                        "   redis.call('pexpire', key, expire) " +
+                        "end " +
+                        "return 1";
+        return this.execute(jedis -> {
+            long ret = (long) jedis.eval(script, Collections.singletonList(key),
+                    Arrays.asList(value, String.valueOf(expire)));
+            return ret == 1L;
         });
     }
 
     @Override
     public void del(String key) {
         execute(jedis -> jedis.del(key));
-    }
-
-    @Override
-    public void incr(String key) {
-        this.execute(jedis -> jedis.incr(key));
     }
 
     @Override
@@ -83,11 +82,6 @@ public class RedisTransporter implements Transporter {
 
         data.forEach((k, v) -> this.execute(jedis -> jedis.hset(key, k, v)));
         this.pexpire(key, expire);
-    }
-
-    @Override
-    public String hget(String key, String field) {
-        return this.execute(jedis -> jedis.hget(key, field));
     }
 
     @Override
@@ -123,6 +117,18 @@ public class RedisTransporter implements Transporter {
     @Override
     public boolean exists(String key) {
         return this.execute(jedis -> jedis.exists(key));
+    }
+
+    @Override
+    public Set<String> smembers(String key) {
+        return this.execute(jedis -> jedis.smembers(key));
+    }
+
+    @Override
+    public Long sadd(String key, long expire, String... member) {
+        Long result = this.execute(jedis -> jedis.sadd(key, member));
+        this.pexpire(key, expire);
+        return result;
     }
 
     private <T> T execute(JedisExecutor<T> executor) {

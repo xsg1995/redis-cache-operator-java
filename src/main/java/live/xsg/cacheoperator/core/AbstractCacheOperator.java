@@ -20,6 +20,8 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     protected MapOperator mapOperator;
     //list类型操作接口
     protected ListOperator listOperator;
+    //set 类型操作接口
+    protected SetOperator setOperator;
     //过滤器链构造器
     protected FilterChain filterChain = FilterChain.getInstance();
     //失败降级策略
@@ -31,6 +33,7 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
         this.stringOperator = new RedisStringOperator(this.transporter , resourceLoader);
         this.mapOperator = new RedisMapOperator(this.transporter, resourceLoader);
         this.listOperator = new RedisListOperator(this.transporter, resourceLoader);
+        this.setOperator = new RedisSetOperator(this.transporter, resourceLoader);
     }
 
     /**
