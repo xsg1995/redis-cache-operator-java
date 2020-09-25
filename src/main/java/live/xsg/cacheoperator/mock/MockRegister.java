@@ -60,7 +60,7 @@ public class MockRegister {
         if (obj == null) {
             LOCK.lock();
             try {
-                this.mocks.add(mock);
+                this.mocks.add(new MatchKeyWrapperMock(key, mock));
             } finally {
                 LOCK.unlock();
             }
