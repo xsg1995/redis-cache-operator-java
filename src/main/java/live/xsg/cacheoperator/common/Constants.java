@@ -47,4 +47,7 @@ public class Constants {
 
     //线程阻塞时间
     public static String BLOCK_TIME = "blockTime";
+
+    //缓存正在刷新时的重试间隔
+    public static String RETRY_INTERVAL = "retryInterval";
 }

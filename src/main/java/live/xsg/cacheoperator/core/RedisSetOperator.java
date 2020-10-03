@@ -57,26 +57,28 @@ public class RedisSetOperator extends AbstractRedisOperator implements SetOperat
 
     @SuppressWarnings("unchecked")
     private Set<String> doFillSetCache(String key, long expire, Refresher<Set<String>> flusher) {
-        boolean isLoading = false;
+        boolean lock = false;
         try {
-            //判断当前key是否已经正在刷新
-            isLoading = this.isLoading(key);
-
-            //如果正在刷新，则不走刷新逻辑
-            if (isLoading) {
+            //获取锁
+            lock = this.tryLock(key);
+            if (!lock) {
+                //没有获取到锁，走阻塞降级策略
                 return (Set<String>) this.blockIfNeed(key);
             }
 
+            //执行具体的获取缓存数据逻辑
             Set<String> data = flusher.refresh();
             String[] members = new String[data.size()];
             data.toArray(members);
+            //对过期时间进行延长
             long newExpire = this.getExtendExpire(expire);
+            //填充缓存
             this.transporter.sadd(key, newExpire, members);
-            return this.transporter.smembers(key);
+            return data;
         } finally {
-            if (!isLoading) {
+            if (!lock) {
                 //设置key已经加载完毕
-                this.loadFinish(key);
+                this.unlock(key);
             }
         }
     }

@@ -137,12 +137,12 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
      */
     @SuppressWarnings("unchecked")
     private List<String> doFillListCache(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
-        boolean isLoading = false;
+        boolean lock = false;
         try {
-            //设置正在加载key对应的数据
-            isLoading = this.isLoading(key);
-            //isLoading=true，则已有其他线程在刷新数据
-            if (isLoading) {
+            //获取锁
+            lock = this.tryLock(key);
+            if (!lock) {
+                //没有获取到锁，走阻塞降级策略
                 List<String> list = (List<String>) this.blockIfNeed(key);
                 if (CollectionUtils.isEmpty(list) && list == Constants.EMPTY_LIST) {
                     return this.transporter.lrange(key, start, end);
@@ -150,23 +150,23 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
                 return list;
             }
 
+            //执行具体的获取缓存数据逻辑
             List<String> data = flusher.refresh();
-
             //将data封装为数组
             String[] strings = new String[data.size()];
             int len = data.size() - 1;
             for (int i = data.size() - 1; i >= 0; i--) {
                 strings[len - i] = data.get(i);
             }
-
+            //对过期时间进行延长
             long newExpire = this.getExtendExpire(expire);
+            //填充缓存
             this.transporter.lpush(key, newExpire, strings);
-
             return this.transporter.lrange(key, start, end);
         } finally {
-            if (!isLoading) {
-                //设置key已经加载完毕
-                this.loadFinish(key);
+            if (lock) {
+                //释放锁
+                this.unlock(key);
             }
         }
     }

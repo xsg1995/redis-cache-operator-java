@@ -13,6 +13,7 @@ import live.xsg.cacheoperator.transport.Transporter;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 
 /**
  * redis操作的父类
@@ -25,6 +26,8 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
     protected static final long DEFAULT_EXTEND_EXPIRE = 5 * 60 * 1000L;
     //默认阻塞时间，1 s
     protected static final long DEFAULT_BLOCK_TIME = 1000L;
+    //默认获取缓存的重试间隔
+    protected static final long DEFAULT_RETRY_INTERVAL = 100L;
 
     //刷新缓存的最大时间
     protected long loadingKeyExpire;
@@ -32,6 +35,8 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
     protected long extendExpire;
     //缓存无数据时，线程最大阻塞时间
     protected long blockTime;
+    //缓存无数据时的重试时间间隔
+    protected long retryInterval;
     //服务器交互接口 RedisTransporter
     protected Transporter transporter;
 
@@ -42,23 +47,24 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
         this.loadingKeyExpire = this.resource.getLong(Constants.LOADING_KEY_EXPIRE, DEFAULT_LOADING_KEY_EXPIRE);
         this.extendExpire = this.resource.getLong(Constants.EXTEND_EXPIRE, DEFAULT_EXTEND_EXPIRE);
         this.blockTime = this.resource.getLong(Constants.BLOCK_TIME, DEFAULT_BLOCK_TIME);
+        this.retryInterval = this.resource.getLong(Constants.RETRY_INTERVAL, DEFAULT_RETRY_INTERVAL);
     }
 
     /**
-     * 设置key对应的数据正在加载，如果没有其他线程在刷新数据，则当前线程进行刷新
+     * 尝试获取锁，如果获取到锁，则可以执行缓存刷新操作
      * @param key key
-     * @return 返回true，则说明已有其他线程正在刷新，返回false，则表示没有其他线程在刷新
+     * @return 返回true，则说明已经获取到锁；返回false，则说明没有获取到锁
      */
-    protected boolean isLoading(String key) {
-        //设置缓存最长刷新时间为 loadingKeyExpire ，在该时段内，只有一个线程刷新缓存
-        return !this.transporter.setIfNotExist(Constants.LOADING_KEY + key, key, this.loadingKeyExpire);
+    protected boolean tryLock(String key) {
+        //设置缓存最长刷新时间为 loadingKeyExpire ，在该时段内，只有一个线程可以获取到锁
+        return this.transporter.setIfNotExist(Constants.LOADING_KEY + key, key, this.loadingKeyExpire);
     }
 
     /**
-     * 设置key对应的数据已经加载完毕
+     * 释放刷新缓存的锁
      * @param key key
      */
-    public void loadFinish(String key) {
+    public void unlock(String key) {
         this.transporter.del(Constants.LOADING_KEY + key);
     }
 
@@ -99,27 +105,24 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
 
     /**
      * 如果缓存中有数据，则返回缓存中的数据；如果缓存中无数据，则循环遍历查询缓存中的数据；
-     * 如果在指定时间内没有获取到数据，则只需Mock降级逻辑
+     * 如果在指定时间内没有获取到数据，则执行Mock降级逻辑
      * @param key key
      * @return 获取缓存中的数据
      */
     protected Object blockIfNeed(String key) {
-        Object res = this.getDataIgnoreValid(key);
-        if (res != null) return res;
+        Object res = null;
 
         //缓存中无数据，则循环遍历获取缓存中的数据
-        long sleepTime = 100L;
-        long currBlockTime = 0L;
-        while (currBlockTime < blockTime) {
-            long start = System.currentTimeMillis();
-            TimeUtils.sleep(sleepTime, TimeUnit.MILLISECONDS);
-            res = this.getDataIgnoreValid(key);
+        long startTime = System.currentTimeMillis();
+        while ((res = this.getDataIgnoreValid(key)) == null) {
+            TimeUtils.sleep(retryInterval, TimeUnit.MILLISECONDS);
 
-            if (res != null) return res;
-
-            currBlockTime += System.currentTimeMillis() - start;
+            if (System.currentTimeMillis() - startTime > blockTime) break;
         }
 
+        if (res != null) return res;
+
+        //阻塞一定时间后还是获取不到数据，则执行降级逻辑
         MockRegister mockRegister = MockRegister.getInstance();
         Iterator<Mock> mockCacheOperators = mockRegister.getMockCacheOperators();
         while (mockCacheOperators.hasNext()) {

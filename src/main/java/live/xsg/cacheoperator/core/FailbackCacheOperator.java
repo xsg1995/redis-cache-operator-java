@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 失败降级策略
+ * 失败降级，后台定时重试策略
  * Created by xsg on 2020/8/5.
  */
 public class FailbackCacheOperator {
@@ -146,7 +146,7 @@ public class FailbackCacheOperator {
     }
 
     /**
-     * redis失败后走降级逻辑=
+     * redis失败后走降级逻辑
      * @return 返回降级逻辑的结果
      */
     private Object doMock(Method method, Object[] args) {

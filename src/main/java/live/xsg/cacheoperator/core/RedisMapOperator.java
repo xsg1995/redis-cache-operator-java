@@ -131,25 +131,28 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
      */
     @SuppressWarnings("unchecked")
     private Map<String, String> doFillMapCache(String key, long expire, Refresher<Map<String, String>> flusher) {
-        boolean isLoading = false;
+        boolean lock = false;
         try {
-            isLoading = this.isLoading(key);
-            //isLoading=true，则已有其他线程在刷新数据
-            if (isLoading) {
+            //获取锁
+            lock = this.tryLock(key);
+            if (!lock) {
+                //没有获取到锁，走阻塞降级策略
                 return (Map<String, String>) this.blockIfNeed(key);
             }
 
+            //执行具体的获取缓存数据逻辑
             Map<String, String> data = flusher.refresh();
-
+            //对过期时间进行延长
             long newExpire = this.getExtendExpire(expire);
+            //对数据进行编码操作
             MapData encodeMap = (MapData) this.getEncodeData(expire, data, CodecEnum.MAP);
+            //填充缓存
             this.transporter.hset(key, newExpire, encodeMap.getData());
-
             return data;
         } finally {
-            if (!isLoading) {
-                //设置key已经加载完毕
-                this.loadFinish(key);
+            if (lock) {
+                //释放锁
+                this.unlock(key);
             }
         }
     }
