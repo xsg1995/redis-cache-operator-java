@@ -34,7 +34,7 @@ public class MapCodec extends AbstractCodec {
     public Object decode(Object message) {
         Map<String, String> data = (Map<String, String>) message;
         if (data == null) {
-            data = new HashMap<>();
+            return null;
         }
 
         String actualExpireTime = data.get(Constants.ACTUAL_EXPIRE_TIME_KEY);

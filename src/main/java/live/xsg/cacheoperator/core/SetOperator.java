@@ -14,7 +14,7 @@ public interface SetOperator {
     /**
      * Set 类型
      * 从缓存中获取数据，如果缓存数据不存在或缓存过期，则刷新缓存数据
-     * 控制只有一个线程可以刷新缓存，当存在线程正在刷新缓存，会有两种情况：
+     * 刷新缓存时，控制只有一个线程可以刷新缓存，当存在线程正在刷新缓存，会有两种情况：
      * 1.缓存存在数据，则返回缓存中的数据
      * 2.缓存不存在数据，则在阻塞一定时间，等待缓存中有数据再返回，参数 blockTime 控制
      * @param key key
@@ -26,6 +26,8 @@ public interface SetOperator {
 
     /**
      * 当没有缓存中无数据或者缓存过期时，异步刷新缓存数据
+     * 该方法返回 null 时，说明缓存正在异步刷新，调用  RedisCacheContext.getContext().getFuture() 获取异步刷新结果
+     *
      * 可以通过 Future<Set<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param expire 缓存的过期时间，单位 毫秒
@@ -36,6 +38,8 @@ public interface SetOperator {
 
     /**
      * 当没有缓存中无数据或者缓存过期时，异步刷新缓存数据
+     * 该方法返回 null 时，说明缓存正在异步刷新，调用  RedisCacheContext.getContext().getFuture() 获取异步刷新结果
+     *
      * 可以通过 Future<Set<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param expire 缓存的过期时间，单位 毫秒

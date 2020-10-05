@@ -12,8 +12,6 @@ import live.xsg.cacheoperator.transport.Transporter;
  */
 public abstract class AbstractCacheOperator extends DefaultResourceRegister implements CacheOperator {
 
-    //服务器交互接口 RedisTransporter
-    protected Transporter transporter;
     //string类型操作接口
     protected StringOperator stringOperator;
     //map类型操作接口
@@ -25,15 +23,15 @@ public abstract class AbstractCacheOperator extends DefaultResourceRegister impl
     //过滤器链构造器
     protected FilterChain filterChain = FilterChain.getInstance();
     //失败降级策略
-    protected FailbackCacheOperator failbackCacheOperator = new FailbackCacheOperator(this);
+    protected FailbackCacheOperator failbackCacheOperator;
 
     public AbstractCacheOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(resourceLoader);
-        this.transporter = transporter;
-        this.stringOperator = new RedisStringOperator(this.transporter , resourceLoader);
-        this.mapOperator = new RedisMapOperator(this.transporter, resourceLoader);
-        this.listOperator = new RedisListOperator(this.transporter, resourceLoader);
-        this.setOperator = new RedisSetOperator(this.transporter, resourceLoader);
+        this.stringOperator = new RedisStringOperator(transporter , resourceLoader);
+        this.mapOperator = new RedisMapOperator(transporter, resourceLoader);
+        this.listOperator = new RedisListOperator(transporter, resourceLoader);
+        this.setOperator = new RedisSetOperator(transporter, resourceLoader);
+        this.failbackCacheOperator = new FailbackCacheOperator(this);
     }
 
     /**

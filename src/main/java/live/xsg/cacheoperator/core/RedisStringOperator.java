@@ -27,19 +27,6 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
     }
 
     @Override
-    public String get(String key) {
-        String res = this.transporter.get(key);
-        StringData stringData = (StringData) this.getDecodeData(res, CodecEnum.STRING);
-        boolean invalid = stringData.isInvalid();
-
-        if (invalid) {
-            //缓存数据过期
-            return Constants.EMPTY_STRING;
-        }
-        return stringData.getData();
-    }
-
-    @Override
     public String get(String key, long expire, Refresher<String> flusher) {
         return this.get(key, expire, flusher, new SyncCacheExecutor<>());
     }
@@ -52,6 +39,11 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
     @Override
     public String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
         return this.get(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
+    }
+
+    @Override
+    public void del(String key) {
+        this.transporter.del(key);
     }
 
     private String get(String key, long expire, Refresher<String> flusher, CacheExecutor<String> cacheExecutor) {
@@ -69,9 +61,6 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
             res = stringData.getData();
         }
 
-        if (res == null) {
-            res = Constants.EMPTY_STRING;
-        }
         return res;
     }
 

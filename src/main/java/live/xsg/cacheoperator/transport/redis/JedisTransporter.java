@@ -17,7 +17,7 @@ public class JedisTransporter implements Transporter {
     private JedisPool jedisPool;
 
     public JedisTransporter() {
-        this(new CacheOperatorJedisPoolConfig());
+        this(new GenericObjectPoolConfig());
     }
 
     public JedisTransporter(GenericObjectPoolConfig poolConfig) {

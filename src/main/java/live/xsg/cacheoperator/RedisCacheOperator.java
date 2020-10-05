@@ -25,8 +25,6 @@ public class RedisCacheOperator {
     //CacheOperator具体实现
     private InnerRedisCacheOperator innerRedisCacheOperator;
 
-    private RedisCacheOperator(){}
-
     private RedisCacheOperator(Builder builder) {
         innerRedisCacheOperator = new InnerRedisCacheOperator(builder.transporter, builder.resourceLoader);
     }
@@ -54,12 +52,14 @@ public class RedisCacheOperator {
             return redisCacheOperator.createProxy();
         }
 
-        public void setTransporter(Transporter transporter) {
+        public Builder transporter(Transporter transporter) {
             this.transporter = transporter;
+            return this;
         }
 
-        public void setResourceLoader(ResourceLoader resourceLoader) {
+        public Builder resourceLoader(ResourceLoader resourceLoader) {
             this.resourceLoader = resourceLoader;
+            return this;
         }
 
     }
@@ -112,7 +112,7 @@ public class RedisCacheOperator {
 
         @Override
         public void del(String key) {
-            this.transporter.del(key);
+            this.stringOperator.del(key);
         }
 
         @Override
@@ -128,11 +128,6 @@ public class RedisCacheOperator {
         @Override
         public String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
             return this.stringOperator.getAsync(key, expire, flusher, executorService);
-        }
-
-        @Override
-        public String get(String key) {
-            return this.stringOperator.get(key);
         }
 
         @Override

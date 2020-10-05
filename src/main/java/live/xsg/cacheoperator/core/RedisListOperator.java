@@ -9,6 +9,7 @@ import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.utils.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -85,7 +86,7 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
         List<String> lrange = this.lrange(key, -1, -1, expire, flusher, this.asyncCacheExecutor);
         String res = null;
         if (!CollectionUtils.isEmpty(lrange)) {
-            res = lrange.get(0);
+            res = lrange.get(lrange.size() - 1);
         }
         return res;
     }
@@ -95,7 +96,7 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
         List<String> lrange = this.lrange(key, -1, -1, expire, flusher, new AsyncCacheExecutor<>(executorService));
         String res = null;
         if (!CollectionUtils.isEmpty(lrange)) {
-            res = lrange.get(0);
+            res = lrange.get(lrange.size() - 1);
         }
         return res;
     }
@@ -125,6 +126,7 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
 
         //缓存过期获取缓存中无数据，刷新缓存
         res = cacheExecutor.executor(() -> this.doFillListCache(key, start, end, expire, flusher));
+
         return res;
     }
 
@@ -152,6 +154,9 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
 
             //执行具体的获取缓存数据逻辑
             List<String> data = flusher.refresh();
+            if (data == null) {
+                data = new ArrayList<>();
+            }
             //将data封装为数组
             String[] strings = new String[data.size()];
             int len = data.size() - 1;

@@ -52,6 +52,7 @@ public class RedisSetOperator extends AbstractRedisOperator implements SetOperat
         if (!CollectionUtils.isEmpty(smembers)) return smembers;
 
         smembers = cacheExecutor.executor(() -> this.doFillSetCache(key, expire, flusher));
+
         return smembers;
     }
 

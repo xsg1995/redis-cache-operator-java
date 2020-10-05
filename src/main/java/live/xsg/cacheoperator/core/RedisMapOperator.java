@@ -28,12 +28,6 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     }
 
     @Override
-    public Map<String, String> hgetAll(String key) {
-        Map<String, String> map = this.transporter.hgetAll(key);
-        return this.getDecodeData(map);
-    }
-
-    @Override
     public Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher) {
         return this.hgetAll(key, expire, flusher, new SyncCacheExecutor<>());
     }
@@ -49,56 +43,46 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     }
 
     @Override
-    public String hget(String key, String field) {
-        Map<String, String> decodeMap = this.getDecodeData(key, field);
-
-        String res = decodeMap.get(field);
-        if (res == null) {
-            return Constants.EMPTY_STRING;
-        }
-        return res;
-    }
-
-    @Override
     public String hget(String key, String field, long expire, Refresher<Map<String, String>> flusher) {
         Map<String, String> decodeMap = this.getDecodeData(key, field);
 
-        String res = decodeMap.get(field);
-        if (res != null) {
-            return res;
+        if (Constants.EMPTY_MAP.equals(decodeMap) || decodeMap == null) {
+            //缓存数据已经过期
+            Map<String, String> data = this.hgetAll(key, expire, flusher);
+            if (data == null) return null;
+
+            return data.get(field);
         }
 
-        //缓存中无数据，则获取请求数据
-        Map<String, String> data = this.hgetAll(key, expire, flusher);
-        res = data.get(field);
-        if (res == null) {
-            res = Constants.EMPTY_STRING;
-        }
-        return res;
+        return decodeMap.get(field);
     }
 
     @Override
     public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
         Map<String, String> decodeMap = this.getDecodeData(key, field);
 
-        String res = decodeMap.get(field);
-        if (res != null) {
-            return res;
+        if (Constants.EMPTY_MAP.equals(decodeMap) || decodeMap == null) {
+            //缓存数据已经过期
+            this.hgetAllAsync(key, expire, fluster);
+
+            return null;
         }
-        this.hgetAllAsync(key, expire, fluster);
-        return Constants.EMPTY_STRING;
+
+        return decodeMap.get(field);
     }
 
     @Override
     public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
         Map<String, String> decodeMap = this.getDecodeData(key, field);
 
-        String res = decodeMap.get(field);
-        if (res != null) {
-            return res;
+        if (Constants.EMPTY_MAP.equals(decodeMap) || decodeMap == null) {
+            //缓存数据已经过期
+            this.hgetAllAsync(key, expire, fluster, executorService);
+
+            return null;
         }
-        this.hgetAllAsync(key, expire, fluster, executorService);
-        return Constants.EMPTY_STRING;
+
+        return decodeMap.get(field);
     }
 
     private Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher, CacheExecutor<Map<String, String>> cacheExecutor) {
@@ -116,9 +100,6 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
             resMap = mapData.getData();
         }
 
-        if (resMap == null) {
-            resMap = new HashMap<>();
-        }
         return resMap;
     }
 
