@@ -64,7 +64,6 @@ public class RedisCacheOperator {
 
     }
 
-
     /**
      * 内部类，实现 InvocationHandler，实现代理，控制访问
      */
@@ -131,11 +130,6 @@ public class RedisCacheOperator {
         }
 
         @Override
-        public Map<String, String> hgetAll(String key) {
-            return this.mapOperator.hgetAll(key);
-        }
-
-        @Override
         public Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher) {
             return this.mapOperator.hgetAll(key, expire, flusher);
         }
@@ -148,11 +142,6 @@ public class RedisCacheOperator {
         @Override
         public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
             return this.mapOperator.hgetAllAsync(key, expire, flusher, executorService);
-        }
-
-        @Override
-        public String hget(String key, String field) {
-            return this.mapOperator.hget(key, field);
         }
 
         @Override
