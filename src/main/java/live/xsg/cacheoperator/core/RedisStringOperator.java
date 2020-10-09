@@ -2,7 +2,6 @@ package live.xsg.cacheoperator.core;
 
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.data.StringData;
-import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;

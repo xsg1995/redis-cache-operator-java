@@ -12,8 +12,11 @@ import live.xsg.cacheoperator.support.TimeUtils;
 import live.xsg.cacheoperator.transport.Transporter;
 
 import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * redis操作的父类
@@ -39,7 +42,8 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
     protected long retryInterval;
     //服务器交互接口 RedisTransporter
     protected Transporter transporter;
-
+    //本地锁，一个 key 对应一个 Lock
+    private Map<String, Lock> localLock = new ConcurrentHashMap<>();
 
     public AbstractRedisOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(resourceLoader);
@@ -56,8 +60,20 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
      * @return 返回true，则说明已经获取到锁；返回false，则说明没有获取到锁
      */
     protected boolean tryLock(String key) {
-        //设置缓存最长刷新时间为 loadingKeyExpire ，在该时段内，只有一个线程可以获取到锁
-        return this.transporter.setIfNotExist(Constants.LOADING_KEY + key, key, this.loadingKeyExpire);
+        Lock localLock = this.getLocalLock(key);
+        boolean lock = localLock.tryLock();
+        try {
+            //获取到本地锁才执行远程分布式锁的获取
+            if (lock) {
+                //设置缓存最长刷新时间为 loadingKeyExpire ，在该时段内，只有一个线程可以获取到锁
+                return this.transporter.setIfNotExist(Constants.LOADING_KEY + key, key, this.loadingKeyExpire);
+            }
+        } finally {
+            if (lock) {
+                localLock.unlock();
+            }
+        }
+        return false;
     }
 
     /**
@@ -112,28 +128,46 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
     protected Object blockIfNeed(String key) {
         Object res = null;
 
-        //缓存中无数据，则循环遍历获取缓存中的数据
-        long startTime = System.currentTimeMillis();
-        while ((res = this.getDataIgnoreValid(key)) == null) {
-            TimeUtils.sleep(retryInterval, TimeUnit.MILLISECONDS);
+        Lock localLock = this.getLocalLock(key);
+        localLock.lock();
+        try {
+            //缓存中无数据，则循环遍历获取缓存中的数据
+            long startTime = System.currentTimeMillis();
+            while ((res = this.getDataIgnoreValid(key)) == null) {
+                TimeUtils.sleep(retryInterval, TimeUnit.MILLISECONDS);
 
-            if (System.currentTimeMillis() - startTime > blockTime) break;
-        }
-
-        if (res != null) return res;
-
-        //阻塞一定时间后还是获取不到数据，则执行降级逻辑
-        MockRegister mockRegister = MockRegister.getInstance();
-        Iterator<Mock> mockCacheOperators = mockRegister.getMockCacheOperators();
-        while (mockCacheOperators.hasNext()) {
-            Mock mock = mockCacheOperators.next();
-            //执行mock逻辑
-            Object result = mock.mock(key, null);
-            if (result != null) {
-                return result;
+                if (System.currentTimeMillis() - startTime > blockTime) break;
             }
+
+            if (res != null) return res;
+
+            //阻塞一定时间后还是获取不到数据，则执行降级逻辑
+            MockRegister mockRegister = MockRegister.getInstance();
+            Iterator<Mock> mockCacheOperators = mockRegister.getMockCacheOperators();
+            while (mockCacheOperators.hasNext()) {
+                Mock mock = mockCacheOperators.next();
+                //执行mock逻辑
+                Object result = mock.mock(key, null);
+                if (result != null) {
+                    return result;
+                }
+            }
+        } finally {
+            localLock.unlock();
         }
+
         return null;
+    }
+
+    /**
+     * 获取 key 对应的本地锁 Lock
+     * 一个 key 对应一个 Lock
+     * @param key key
+     * @return Lock
+     */
+    private Lock getLocalLock(String key) {
+        this.localLock.putIfAbsent(key, new ReentrantLock());
+        return this.localLock.get(key);
     }
 
     /**

@@ -28,13 +28,22 @@ public class RedisCacheOperatorTest {
         long expire = 10 * 60 * 1000;  //10 分钟
 
         CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
-        String cacheValue = cacheOperator.get(key, expire, () -> {
-            //执行业务逻辑，获取值
-            return sourceValue;
+
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
+
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(100, () -> {
+            String cacheValue = cacheOperator.get(key, expire, () -> {
+                sleep(10);
+                System.out.println("get...............................");
+                //执行业务逻辑，获取值
+                return sourceValue;
+            });
+            System.out.println(cacheValue);
+//            assertEquals(sourceValue, cacheValue);
         });
 
         cacheOperator.del(key);
-        assertEquals(sourceValue, cacheValue);
     }
 
     @Test
@@ -118,14 +127,6 @@ public class RedisCacheOperatorTest {
     }
 
     @Test
-    public void getAllMap_test() {
-        String mapKey = "mapKey";
-        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
-        Map<String, String> resMap = cacheOperator.hgetAll(mapKey);
-        assertEquals(resMap, Constants.EMPTY_MAP);
-    }
-
-    @Test
     public void getAllMap_with_fluster_test() {
         String mapKey = "mapKey";
         Map<String, String> mockData = new HashMap<>();
@@ -173,16 +174,6 @@ public class RedisCacheOperatorTest {
             System.out.println("result:" + value);
         });
         cacheOperator.del(key);
-    }
-
-    @Test
-    public void hget_test() {
-        String key = "hgetKey";
-        String field = "hgetField";
-        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
-        String result = cacheOperator.hget(key, field);
-
-        assertEquals(result, "");
     }
 
     @Test
