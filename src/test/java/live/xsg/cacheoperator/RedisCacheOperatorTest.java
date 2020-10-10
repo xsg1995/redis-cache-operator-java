@@ -47,6 +47,31 @@ public class RedisCacheOperatorTest {
     }
 
     @Test
+    public void getString_with_fluster_test2() {
+        String key = "sayHello";
+        String sourceValue = "hello world!";
+        long expire = 5 * 1000;  //5 s
+
+        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
+
+        //启动 10 个线程运行
+        batchTaskExecutor.batchRun(100, () -> {
+            String cacheValue = cacheOperator.get(key, expire, () -> {
+                sleep(10);
+                System.out.println("get...............................");
+                //执行业务逻辑，获取值
+                return sourceValue;
+            });
+            System.out.println(cacheValue);
+//            assertEquals(sourceValue, cacheValue);
+        });
+
+//        cacheOperator.del(key);
+    }
+
+    @Test
     public void getStringAsync_with_fluster_test() throws ExecutionException, InterruptedException {
         String key = "sayHello";
         String sourceValue = "hello world!";
