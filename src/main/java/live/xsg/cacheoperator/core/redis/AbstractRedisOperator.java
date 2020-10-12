@@ -140,7 +140,6 @@ public abstract class AbstractRedisOperator extends DefaultResourceRegister {
         if (refreshLock.get() == 1) {
             return false;
         }
-        System.out.println("refreshLock");
 
         //本地锁，避免频繁调用分布式锁
         Lock localLock = this.getLocalLock(key);

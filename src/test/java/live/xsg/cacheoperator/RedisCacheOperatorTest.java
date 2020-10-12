@@ -350,11 +350,11 @@ public class RedisCacheOperatorTest {
         BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
         //启动 10 个线程运行
-        batchTaskExecutor.batchRun(10, () -> {
+        batchTaskExecutor.batchRun(100, () -> {
             try {
                 cacheOperator.smembersAsync(key, EXPIRE, () -> {
                     System.out.println("access.....................");
-                    sleep(50L);
+                    sleep(4);
                     return fruits;
                 });
                 Future<Set<String>> future = RedisCacheContext.getContext().getFuture();
