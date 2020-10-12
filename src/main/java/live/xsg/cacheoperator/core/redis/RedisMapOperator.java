@@ -1,8 +1,9 @@
-package live.xsg.cacheoperator.core;
+package live.xsg.cacheoperator.core.redis;
 
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.data.MapData;
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.core.MapOperator;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
@@ -11,7 +12,6 @@ import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.utils.MapUtils;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -94,48 +94,37 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
 
         if (invalid) {
             //缓存过期获取缓存中无数据，刷新缓存
-            resMap = cacheExecutor.executor(() -> this.doFillMapCache(key, expire, flusher));
+            resMap = cacheExecutor.executor(() -> this.fillCache(new FillCache<Map<String, String>>() {
+                @Override
+                public String getKey() {
+                    return key;
+                }
+
+                @SuppressWarnings("unchecked")
+                @Override
+                public Map<String, String> getIgnoreValidData() {
+                    return (Map<String, String>) blockIfNeed(key);
+                }
+
+                @Override
+                public Map<String, String> getCacheData() {
+                    //执行具体的获取缓存数据逻辑
+                    Map<String, String> data = flusher.refresh();
+                    //对过期时间进行延长
+                    long newExpire = getExtendExpire(expire);
+                    //对数据进行编码操作
+                    MapData encodeMap = (MapData) getEncodeData(expire, data, CodecEnum.MAP);
+                    //填充缓存
+                    transporter.hset(key, newExpire, encodeMap.getData());
+                    return data;
+                }
+            }));
         } else {
             //缓存中存在数据且未过期
             resMap = mapData.getData();
         }
 
         return resMap;
-    }
-
-    /**
-     * 填充数据到缓存中
-     * @param key key
-     * @param expire 缓存过期时间
-     * @param flusher 获取缓存数据
-     * @return 返回最新数据
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, String> doFillMapCache(String key, long expire, Refresher<Map<String, String>> flusher) {
-        boolean lock = false;
-        try {
-            //获取锁
-            lock = this.tryLock(key);
-            if (!lock) {
-                //没有获取到锁，走阻塞降级策略
-                return (Map<String, String>) this.blockIfNeed(key);
-            }
-
-            //执行具体的获取缓存数据逻辑
-            Map<String, String> data = flusher.refresh();
-            //对过期时间进行延长
-            long newExpire = this.getExtendExpire(expire);
-            //对数据进行编码操作
-            MapData encodeMap = (MapData) this.getEncodeData(expire, data, CodecEnum.MAP);
-            //填充缓存
-            this.transporter.hset(key, newExpire, encodeMap.getData());
-            return data;
-        } finally {
-            if (lock) {
-                //释放锁
-                this.unlock(key);
-            }
-        }
     }
 
     @Override

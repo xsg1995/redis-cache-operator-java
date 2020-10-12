@@ -57,7 +57,7 @@ public class RedisCacheOperatorTest {
         BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
         //启动 10 个线程运行
-        batchTaskExecutor.batchRun(100, () -> {
+        batchTaskExecutor.batchRun(1000, () -> {
             String cacheValue = cacheOperator.get(key, expire, () -> {
                 sleep(10);
                 System.out.println("get...............................");

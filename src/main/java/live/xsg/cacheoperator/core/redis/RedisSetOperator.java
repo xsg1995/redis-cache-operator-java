@@ -1,5 +1,6 @@
-package live.xsg.cacheoperator.core;
+package live.xsg.cacheoperator.core.redis;
 
+import live.xsg.cacheoperator.core.SetOperator;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
@@ -51,36 +52,32 @@ public class RedisSetOperator extends AbstractRedisOperator implements SetOperat
         Set<String> smembers = this.transporter.smembers(key);
         if (!CollectionUtils.isEmpty(smembers)) return smembers;
 
-        smembers = cacheExecutor.executor(() -> this.doFillSetCache(key, expire, flusher));
+        smembers = cacheExecutor.executor(() -> this.fillCache(new FillCache<Set<String>>() {
+            @Override
+            public String getKey() {
+                return key;
+            }
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public Set<String> getIgnoreValidData() {
+                return (Set<String>) blockIfNeed(key);
+            }
+
+            @Override
+            public Set<String> getCacheData() {
+                //执行具体的获取缓存数据逻辑
+                Set<String> data = flusher.refresh();
+                String[] members = new String[data.size()];
+                data.toArray(members);
+                //对过期时间进行延长
+                long newExpire = getExtendExpire(expire);
+                //填充缓存
+                transporter.sadd(key, newExpire, members);
+                return data;
+            }
+        }));
 
         return smembers;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Set<String> doFillSetCache(String key, long expire, Refresher<Set<String>> flusher) {
-        boolean lock = false;
-        try {
-            //获取锁
-            lock = this.tryLock(key);
-            if (!lock) {
-                //没有获取到锁，走阻塞降级策略
-                return (Set<String>) this.blockIfNeed(key);
-            }
-
-            //执行具体的获取缓存数据逻辑
-            Set<String> data = flusher.refresh();
-            String[] members = new String[data.size()];
-            data.toArray(members);
-            //对过期时间进行延长
-            long newExpire = this.getExtendExpire(expire);
-            //填充缓存
-            this.transporter.sadd(key, newExpire, members);
-            return data;
-        } finally {
-            if (!lock) {
-                //设置key已经加载完毕
-                this.unlock(key);
-            }
-        }
     }
 }
