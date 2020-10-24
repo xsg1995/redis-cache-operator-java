@@ -4,6 +4,7 @@ import live.xsg.cacheoperator.flusher.Refresher;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * list类型操作接口
@@ -54,20 +55,20 @@ public interface ListOperator {
 
     /**
      * 当没有命中缓存或者缓存过期时，异步刷新缓存
-     * 异步刷新缓存时，该方法返回 null
+     *
      * 可以通过 Future<List<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param start start
      * @param end end
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
-     * @return 返回缓存中的数据
+     * @return 调用 future.get() 获取返回结果
      */
-    List<String> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher);
+    Future<List<String>> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher);
 
     /**
      * 当没有命中缓存或者缓存过期时，异步刷新缓存
-     * 异步刷新缓存时，该方法返回 null
+     *
      * 可以通过 Future<List<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param start start
@@ -75,53 +76,53 @@ public interface ListOperator {
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @param executorService 自定义线程池
-     * @return 返回缓存中的数据
+     * @return 调用 future.get() 获取返回结果
      */
-    List<String> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher, ExecutorService executorService);
+    Future<List<String>> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher, ExecutorService executorService);
 
     /**
      * 当没有命中缓存或者缓存过期时，异步刷新缓存
-     * 异步刷新缓存时，该方法返回 null
+     *
      * 可以通过 Future<List<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @return 返回缓存中的数据
      */
-    String lpopAsync(String key, long expire, Refresher<List<String>> flusher);
+    Future<List<String>> lpopAsync(String key, long expire, Refresher<List<String>> flusher);
 
     /**
      * 当没有命中缓存或者缓存过期时，异步刷新缓存
-     * 异步刷新缓存时，该方法返回 null
-     * 可以通过 Future<List<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
-     * @param key key
-     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
-     * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
-     * @param executorService 自定义线程池
-     * @return 返回缓存中的数据
-     */
-    String lpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService);
-
-    /**
-     * 当没有命中缓存或者缓存过期时，异步刷新缓存
-     * 异步刷新缓存时，该方法返回 null
-     * 可以通过 Future<List<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
-     * @param key key
-     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
-     * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
-     * @return 返回缓存中的数据
-     */
-    String rpopAsync(String key, long expire, Refresher<List<String>> flusher);
-
-    /**
-     * 当没有命中缓存或者缓存过期时，异步刷新缓存
-     * 异步刷新缓存时，该方法返回 null
+     *
      * 可以通过 Future<List<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @param executorService 自定义线程池
-     * @return 返回缓存中的数据
+     * @return 调用 future.get() 获取返回结果
      */
-    String rpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService);
+    Future<List<String>> lpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService);
+
+    /**
+     * 当没有命中缓存或者缓存过期时，异步刷新缓存
+     *
+     * 可以通过 Future<List<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
+     * @param key key
+     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
+     * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
+     * @return 调用 future.get() 获取返回结果
+     */
+    Future<List<String>> rpopAsync(String key, long expire, Refresher<List<String>> flusher);
+
+    /**
+     * 当没有命中缓存或者缓存过期时，异步刷新缓存
+     *
+     * 可以通过 Future<List<String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
+     * @param key key
+     * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
+     * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
+     * @param executorService 自定义线程池
+     * @return 调用 future.get() 获取返回结果
+     */
+    Future<List<String>> rpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService);
 }

@@ -27,7 +27,7 @@ public class RedisCacheOperatorTest {
         String sourceValue = "hello world!";
         long expire = 10 * 60 * 1000;  //10 分钟
 
-        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        CacheOperator cacheOperator = RedisCacheOperator.builder().build();
 
         BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
@@ -52,13 +52,13 @@ public class RedisCacheOperatorTest {
         String sourceValue = "hello world!";
         long expire = 10 * 60 * 1000;  //10 分钟
 
-        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
-        String cacheValue = cacheOperator.getAsync(key, expire, () -> {
+        CacheOperator cacheOperator = RedisCacheOperator.builder().build();
+        Future<String> future = cacheOperator.getAsync(key, expire, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
         });
 
-        assertEquals(cacheValue, Constants.EMPTY_STRING);
+        assertEquals(future.get(), sourceValue);
 
         Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
         String result = resultFuture.get();

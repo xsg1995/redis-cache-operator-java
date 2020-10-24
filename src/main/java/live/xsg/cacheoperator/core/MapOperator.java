@@ -4,6 +4,7 @@ import live.xsg.cacheoperator.flusher.Refresher;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * map类型操作接口
@@ -29,29 +30,27 @@ public interface MapOperator {
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则异步刷新缓存数据
      * 控制只有一个线程可以刷新缓存
-     * 该方法返回 null 时，说明缓存正在异步刷新，调用  RedisCacheContext.getContext().getFuture() 获取异步刷新结果
      * 使用 Executor executor = Executors.newCachedThreadPool()
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
-     * @return 返回缓存中的数据
+     * @return 调用 future.get() 获取返回结果
      */
-    Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher);
+    Future<Map<String, String>> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher);
 
     /**
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则异步刷新缓存数据
      * 控制只有一个线程可以刷新缓存
-     * 该方法返回 null 时，说明缓存正在异步刷新，调用  RedisCacheContext.getContext().getFuture() 获取异步刷新结果
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param flusher 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @param executorService 指定以线程池实现
-     * @return 返回缓存中的数据
+     * @return 调用 future.get() 获取返回结果
      */
-    Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService);
+    Future<Map<String, String>> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService);
 
     /**
      * map类型
@@ -71,22 +70,20 @@ public interface MapOperator {
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则异步刷新缓存数据
      * 控制只有一个线程可以刷新缓存
-     * 该方法返回 null 时，说明缓存正在异步刷新，调用  RedisCacheContext.getContext().getFuture() 获取异步刷新结果
      *
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
      * @param field map中的key
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param fluster 当缓存不存在或者缓存过期时，刷新缓存数据的接口
-     * @return 返回缓存中的数据
+     * @return 调用 future.get() 获取返回结果
      */
-    String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster);
+    Future<String> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster);
 
     /**
      * map类型
      * 从缓存中获取数据，如果缓存数据不存在或者缓存过期，则异步刷新缓存数据
      * 控制只有一个线程可以刷新缓存
-     * 该方法返回 null 时，说明缓存正在异步刷新，调用  RedisCacheContext.getContext().getFuture() 获取异步刷新结果
      *
      * 可以通过 Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture(); 获取异步执行结果
      * @param key key
@@ -94,7 +91,7 @@ public interface MapOperator {
      * @param expire 缓存不存在数据或者缓存过期时，填充缓存时的过期时间，单位毫秒
      * @param fluster 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @param executorService 指定线程池实现
-     * @return 返回缓存中的数据
+     * @return 调用 future.get() 获取返回结果
      */
-    String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService);
+    Future<String> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService);
 }

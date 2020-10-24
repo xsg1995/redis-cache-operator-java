@@ -4,6 +4,7 @@ import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.data.StringData;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
+import live.xsg.cacheoperator.executor.FutureAdapter;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.loader.ResourceLoader;
@@ -11,6 +12,8 @@ import live.xsg.cacheoperator.transport.Transporter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 /**
  * string类型操作实现
@@ -19,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 public class RedisStringOperator extends AbstractRedisOperator implements StringOperator {
 
     //异步任务执行器
-    protected CacheExecutor<String> asyncCacheExecutor = new AsyncCacheExecutor();
+    protected CacheExecutor<String> asyncCacheExecutor = new AsyncCacheExecutor<String>();
 
     public RedisStringOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(transporter, resourceLoader);
@@ -27,16 +30,16 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
 
     @Override
     public String get(String key, long expire, Refresher<String> flusher) {
-        return this.get(key, expire, flusher, new SyncCacheExecutor<>());
+        return this.get(key, expire, flusher, new SyncCacheExecutor<>()).getData();
     }
 
     @Override
-    public String getAsync(String key, long expire, Refresher<String> flusher) {
+    public Future<String> getAsync(String key, long expire, Refresher<String> flusher) {
         return this.get(key, expire, flusher, this.asyncCacheExecutor);
     }
 
     @Override
-    public String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
+    public Future<String> getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
         return this.get(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
     }
 
@@ -45,7 +48,9 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
         this.transporter.del(key);
     }
 
-    private String get(String key, long expire, Refresher<String> flusher, CacheExecutor<String> cacheExecutor) {
+    private FutureAdapter<String> get(String key, long expire,
+                                      Refresher<String> flusher,
+                                      CacheExecutor<String> cacheExecutor) {
         String res = this.transporter.get(key);
 
         //数据解码
@@ -54,19 +59,18 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
 
         if (invalid) {
             //缓存过期，则重新刷新缓存
-            res = cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
+            return (FutureAdapter<String>) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
         } else {
             //缓存中存在数据且未过期
-            res = stringData.getData();
+            return new FutureAdapter<>(stringData.getData());
         }
-
-        return res;
     }
 
     /**
      * 执行 Refresher 获取数据，并将数据填充到缓存中
-     * @param key key
-     * @param expire 缓存过期时间
+     *
+     * @param key     key
+     * @param expire  缓存过期时间
      * @param flusher 获取缓存数据
      * @return 返回最新数据
      */

@@ -5,15 +5,17 @@ import live.xsg.cacheoperator.codec.data.MapData;
 import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
+import live.xsg.cacheoperator.executor.FutureAdapter;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.loader.ResourceLoader;
 import live.xsg.cacheoperator.transport.Transporter;
 import live.xsg.cacheoperator.utils.MapUtils;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 /**
  * map类型操作实现
@@ -21,7 +23,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class RedisMapOperator extends AbstractRedisOperator implements MapOperator {
     //异步任务执行器
-    protected CacheExecutor<Map<String, String>> asyncCacheExecutor = new AsyncCacheExecutor();
+    protected CacheExecutor<Map<String, String>> asyncCacheExecutor = new AsyncCacheExecutor<Map<String, String>>();
 
     public RedisMapOperator(Transporter transporter, ResourceLoader resourceLoader) {
         super(transporter, resourceLoader);
@@ -29,16 +31,16 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
 
     @Override
     public Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher) {
-        return this.hgetAll(key, expire, flusher, new SyncCacheExecutor<>());
+        return this.hgetAll(key, expire, flusher, new SyncCacheExecutor<>()).getData();
     }
 
     @Override
-    public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
+    public Future<Map<String, String>> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
         return this.hgetAll(key, expire, flusher, this.asyncCacheExecutor);
     }
 
     @Override
-    public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
+    public Future<Map<String, String>> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
         return this.hgetAll(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
     }
 
@@ -58,7 +60,7 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     }
 
     @Override
-    public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
+    public Future<String> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
         Map<String, String> decodeMap = this.getDecodeData(key, field);
 
         if (Constants.EMPTY_MAP.equals(decodeMap) || decodeMap == null) {
@@ -68,11 +70,11 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
             return null;
         }
 
-        return decodeMap.get(field);
+        return new FutureAdapter<>(decodeMap.get(field));
     }
 
     @Override
-    public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
+    public Future<String> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
         Map<String, String> decodeMap = this.getDecodeData(key, field);
 
         if (Constants.EMPTY_MAP.equals(decodeMap) || decodeMap == null) {
@@ -82,10 +84,13 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
             return null;
         }
 
-        return decodeMap.get(field);
+        return new FutureAdapter<>(decodeMap.get(field));
     }
 
-    private Map<String, String> hgetAll(String key, long expire, Refresher<Map<String, String>> flusher, CacheExecutor<Map<String, String>> cacheExecutor) {
+    private FutureAdapter<Map<String, String>> hgetAll(String key,
+                                                       long expire,
+                                                       Refresher<Map<String, String>> flusher,
+                                                       CacheExecutor<Map<String, String>> cacheExecutor) {
         Map<String, String> resMap = this.transporter.hgetAll(key);
 
         //数据解码
@@ -94,13 +99,11 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
 
         if (invalid) {
             //缓存过期获取缓存中无数据，刷新缓存
-            resMap = cacheExecutor.executor(() -> this.doFillMapCache(key, expire, flusher));
+            return (FutureAdapter<Map<String, String>>) cacheExecutor.executor(() -> this.doFillMapCache(key, expire, flusher));
         } else {
             //缓存中存在数据且未过期
-            resMap = mapData.getData();
+            return new FutureAdapter<>(mapData.getData());
         }
-
-        return resMap;
     }
 
     /**

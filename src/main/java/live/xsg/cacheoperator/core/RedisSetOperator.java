@@ -2,6 +2,7 @@ package live.xsg.cacheoperator.core;
 
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
+import live.xsg.cacheoperator.executor.FutureAdapter;
 import live.xsg.cacheoperator.executor.SyncCacheExecutor;
 import live.xsg.cacheoperator.flusher.Refresher;
 import live.xsg.cacheoperator.loader.ResourceLoader;
@@ -10,6 +11,7 @@ import live.xsg.cacheoperator.utils.CollectionUtils;
 
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * set 类型操作实现
@@ -34,26 +36,27 @@ public class RedisSetOperator extends AbstractRedisOperator implements SetOperat
 
     @Override
     public Set<String> smembers(String key, long expire, Refresher<Set<String>> flusher) {
-        return this.smembers(key, expire, flusher, new SyncCacheExecutor<>());
+        return this.smembers(key, expire, flusher, new SyncCacheExecutor<>()).getData();
     }
 
     @Override
-    public Set<String> smembersAsync(String key, long expire, Refresher<Set<String>> flusher) {
+    public Future<Set<String>> smembersAsync(String key, long expire, Refresher<Set<String>> flusher) {
         return this.smembers(key, expire, flusher, this.asyncCacheExecutor);
     }
 
     @Override
-    public Set<String> smembersAsync(String key, long expire, Refresher<Set<String>> flusher, ExecutorService executorService) {
+    public Future<Set<String>> smembersAsync(String key, long expire, Refresher<Set<String>> flusher, ExecutorService executorService) {
         return this.smembers(key, expire, flusher, new AsyncCacheExecutor<>(executorService));
     }
 
-    private Set<String> smembers(String key, long expire, Refresher<Set<String>> flusher, CacheExecutor<Set<String>> cacheExecutor) {
+    private FutureAdapter<Set<String>> smembers(String key,
+                                         long expire,
+                                         Refresher<Set<String>> flusher,
+                                         CacheExecutor<Set<String>> cacheExecutor) {
         Set<String> smembers = this.transporter.smembers(key);
-        if (!CollectionUtils.isEmpty(smembers)) return smembers;
+        if (!CollectionUtils.isEmpty(smembers)) return new FutureAdapter<>(smembers);
 
-        smembers = cacheExecutor.executor(() -> this.doFillSetCache(key, expire, flusher));
-
-        return smembers;
+        return (FutureAdapter<Set<String>>) cacheExecutor.executor(() -> this.doFillSetCache(key, expire, flusher));
     }
 
     @SuppressWarnings("unchecked")

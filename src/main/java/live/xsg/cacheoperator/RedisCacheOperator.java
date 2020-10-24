@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * redis缓存操作器
@@ -34,6 +35,10 @@ public class RedisCacheOperator {
      */
     private CacheOperator createProxy() {
         return (CacheOperator) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[] {CacheOperator.class}, this.innerRedisCacheOperator);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -120,12 +125,12 @@ public class RedisCacheOperator {
         }
 
         @Override
-        public String getAsync(String key, long expire, Refresher<String> flusher) {
+        public Future<String> getAsync(String key, long expire, Refresher<String> flusher) {
             return this.stringOperator.getAsync(key, expire, flusher);
         }
 
         @Override
-        public String getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
+        public Future<String> getAsync(String key, long expire, Refresher<String> flusher, ExecutorService executorService) {
             return this.stringOperator.getAsync(key, expire, flusher, executorService);
         }
 

@@ -22,10 +22,10 @@ public class AsyncCacheExecutor<T> implements CacheExecutor<T> {
     }
 
     @Override
-    public T executor(CacheTask<T> task) {
-        Future<T> future = executorService.submit(task::run);
-        RedisCacheContext.getContext().setFuture(future);
-        return null;
+    public Future<T> executor(CacheTask<T> task) {
+        FutureAdapter<T> futureAdapter = new FutureAdapter<>(executorService.submit(task));
+        RedisCacheContext.getContext().setFuture(futureAdapter);
+        return futureAdapter;
     }
 
     static class ExecutorUtils {
