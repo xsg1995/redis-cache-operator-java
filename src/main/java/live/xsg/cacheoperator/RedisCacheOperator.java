@@ -140,12 +140,12 @@ public class RedisCacheOperator {
         }
 
         @Override
-        public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
+        public Future<Map<String, String>> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher) {
             return this.mapOperator.hgetAllAsync(key, expire, flusher);
         }
 
         @Override
-        public Map<String, String> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
+        public Future<Map<String, String>> hgetAllAsync(String key, long expire, Refresher<Map<String, String>> flusher, ExecutorService executorService) {
             return this.mapOperator.hgetAllAsync(key, expire, flusher, executorService);
         }
 
@@ -155,12 +155,12 @@ public class RedisCacheOperator {
         }
 
         @Override
-        public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
+        public Future<Map<String, String>> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
             return this.mapOperator.hgetAsync(key, field, expire, fluster);
         }
 
         @Override
-        public String hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
+        public Future<Map<String, String>> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
             return this.mapOperator.hgetAsync(key, field, expire, fluster, executorService);
         }
 
@@ -180,32 +180,32 @@ public class RedisCacheOperator {
         }
 
         @Override
-        public List<String> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
+        public Future<List<String>> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
             return this.listOperator.lrangeAsync(key, start, end, expire, flusher);
         }
 
         @Override
-        public List<String> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+        public Future<List<String>> lrangeAsync(String key, long start, long end, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
             return this.listOperator.lrangeAsync(key, start, end, expire, flusher, executorService);
         }
 
         @Override
-        public String lpopAsync(String key, long expire, Refresher<List<String>> flusher) {
+        public Future<List<String>> lpopAsync(String key, long expire, Refresher<List<String>> flusher) {
             return this.listOperator.lpopAsync(key, expire, flusher);
         }
 
         @Override
-        public String lpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+        public Future<List<String>> lpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
             return this.listOperator.lpopAsync(key, expire, flusher, executorService);
         }
 
         @Override
-        public String rpopAsync(String key, long expire, Refresher<List<String>> flusher) {
+        public Future<List<String>> rpopAsync(String key, long expire, Refresher<List<String>> flusher) {
             return this.listOperator.rpopAsync(key, expire, flusher);
         }
 
         @Override
-        public String rpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
+        public Future<List<String>> rpopAsync(String key, long expire, Refresher<List<String>> flusher, ExecutorService executorService) {
             return this.listOperator.rpopAsync(key, expire, flusher, executorService);
         }
 
@@ -215,12 +215,12 @@ public class RedisCacheOperator {
         }
 
         @Override
-        public Set<String> smembersAsync(String key, long expire, Refresher<Set<String>> flusher) {
+        public Future<Set<String>> smembersAsync(String key, long expire, Refresher<Set<String>> flusher) {
             return this.setOperator.smembersAsync(key, expire, flusher);
         }
 
         @Override
-        public Set<String> smembersAsync(String key, long expire, Refresher<Set<String>> flusher, ExecutorService executorService) {
+        public Future<Set<String>> smembersAsync(String key, long expire, Refresher<Set<String>> flusher, ExecutorService executorService) {
             return this.smembersAsync(key, expire, flusher, executorService);
         }
     }

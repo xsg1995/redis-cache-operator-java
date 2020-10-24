@@ -10,6 +10,8 @@ import java.util.concurrent.FutureTask;
 public class SyncCacheExecutor<T> implements CacheExecutor<T> {
     @Override
     public Future<T> executor(CacheTask<T> task) {
-        return new FutureAdapter<>(new FutureTask<>(task));
+        FutureTask<T> futureTask = new FutureTask<>(task);
+        futureTask.run();
+        return new FutureAdapter<>(futureTask);
     }
 }

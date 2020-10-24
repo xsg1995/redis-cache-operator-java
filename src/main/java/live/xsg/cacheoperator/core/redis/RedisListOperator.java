@@ -110,10 +110,10 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
                                              Refresher<List<String>> flusher,
                                              CacheExecutor<List<String>> cacheExecutor) {
         List<String> res = this.transporter.lrange(key, start, end);
-        if (!CollectionUtils.isEmpty(res)) return new FutureAdapter<>(res);
+        if (!CollectionUtils.isEmpty(res)) return FutureAdapter.runAndGetFuture(res);
 
         //缓存过期获取缓存中无数据，刷新缓存
-        res = cacheExecutor.executor(() -> this.fillCache(new FillCache<List<String>>() {
+        return (FutureAdapter<List<String>>) cacheExecutor.executor(() -> this.fillCache(new FillCache<List<String>>() {
             @Override
             public String getKey() {
                 return key;
@@ -149,7 +149,5 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
                 return data;
             }
         }));
-
-        return res;
     }
 }

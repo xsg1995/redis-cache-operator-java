@@ -1,6 +1,5 @@
 package live.xsg.cacheoperator;
 
-import live.xsg.cacheoperator.common.Constants;
 import live.xsg.cacheoperator.context.RedisCacheContext;
 import live.xsg.cacheoperator.core.CacheOperator;
 import live.xsg.cacheoperator.filter.Filter;
@@ -9,7 +8,9 @@ import live.xsg.cacheoperator.mock.MockRegister;
 import org.testng.annotations.Test;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -31,7 +32,7 @@ public class RedisCacheOperatorTest {
 
         BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
-        //启动 10 个线程运行
+        //启动 100 个线程运行
         batchTaskExecutor.batchRun(100, () -> {
             String cacheValue = cacheOperator.get(key, expire, () -> {
                 sleep(10);
@@ -52,11 +53,11 @@ public class RedisCacheOperatorTest {
         String sourceValue = "hello world!";
         long expire = 5 * 1000;  //5 s
 
-        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        CacheOperator cacheOperator = RedisCacheOperator.builder().build();
 
         BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
 
-        //启动 10 个线程运行
+        //启动 1000 个线程运行
         batchTaskExecutor.batchRun(1000, () -> {
             String cacheValue = cacheOperator.get(key, expire, () -> {
                 sleep(10);
@@ -72,22 +73,33 @@ public class RedisCacheOperatorTest {
     }
 
     @Test
-    public void getStringAsync_with_fluster_test() throws ExecutionException, InterruptedException {
+    public void getStringAsync_with_fluster_test() {
         String key = "sayHello";
         String sourceValue = "hello world!";
         long expire = 10 * 60 * 1000;  //10 分钟
 
         CacheOperator cacheOperator = RedisCacheOperator.builder().build();
-        Future<String> future = cacheOperator.getAsync(key, expire, () -> {
-            //执行业务逻辑，获取值
-            return sourceValue;
+
+        BatchTaskExecutor batchTaskExecutor = new BatchTaskExecutor();
+
+        //启动 1000 个线程运行
+        batchTaskExecutor.batchRun(1000, () -> {
+            Future<String> future = cacheOperator.getAsync(key, expire, () -> {
+                System.out.println("get...............................");
+                //执行业务逻辑，获取值
+                return sourceValue;
+            });
+
+            try {
+                assertEquals(future.get(), sourceValue);
+                System.out.println(future.get());
+                Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
+                String result = resultFuture.get();
+                assertEquals(result, sourceValue);
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
         });
-
-        assertEquals(future.get(), sourceValue);
-
-        Future<String> resultFuture = RedisCacheContext.getContext().getFuture();
-        String result = resultFuture.get();
-        assertEquals(result, sourceValue);
 
         cacheOperator.del(key);
     }
@@ -105,7 +117,7 @@ public class RedisCacheOperatorTest {
             return null;
         });
 
-        CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
+        CacheOperator cacheOperator = RedisCacheOperator.builder().build();
         String cacheValue = cacheOperator.get(key, EXPIRE, () -> {
             //执行业务逻辑，获取值
             return sourceValue;
@@ -172,13 +184,12 @@ public class RedisCacheOperatorTest {
         mockData.put("value", "mapValue");
 
         CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
-        Map<String, String> res = cacheOperator.hgetAllAsync(mapKey, EXPIRE, () -> mockData);
+        Future<Map<String, String>> future = cacheOperator.hgetAllAsync(mapKey, EXPIRE, () -> mockData);
 
-        assertEquals(res, Constants.EMPTY_MAP);
+        assertEquals(future, mockData);
 
-        Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture();
-        res = future.get();
-        assertEquals(res, mockData);
+        future = RedisCacheContext.getContext().getFuture();
+        assertEquals(future.get(), mockData);
 
         cacheOperator.del(mapKey);
     }
@@ -208,10 +219,10 @@ public class RedisCacheOperatorTest {
         mockData.put("value", "mapValue");
 
         CacheOperator cacheOperator = new RedisCacheOperator.Builder().build();
-        String value = cacheOperator.hgetAsync(mapKey, "value", EXPIRE, () -> mockData);
-        assertEquals(value, Constants.EMPTY_STRING);
+        Future<Map<String, String>> future = cacheOperator.hgetAsync(mapKey, "value", EXPIRE, () -> mockData);
+        assertEquals(future.get(), mockData);
 
-        Future<Map<String, String>> future = RedisCacheContext.getContext().getFuture();
+        future = RedisCacheContext.getContext().getFuture();
         Map<String, String> res = future.get();
         assertEquals(res, mockData);
 
@@ -299,13 +310,13 @@ public class RedisCacheOperatorTest {
         //启动 10 个线程运行
         batchTaskExecutor.batchRun(10, () -> {
             try {
-                List<String> result = cacheOperator.lrangeAsync(key, 0, -1, EXPIRE, () -> {
+                Future<List<String>> future = cacheOperator.lrangeAsync(key, 0, -1, EXPIRE, () -> {
                     System.out.println("access...........................");
                     sleep(1);
                     return fruits;
                 });
-                System.out.println("同步返回:" + result);
-                Future<List<String>> future = RedisCacheContext.getContext().getFuture();
+                System.out.println("同步返回:" + future.get());
+                future = RedisCacheContext.getContext().getFuture();
                 if (future != null) {
                     System.out.println("异步执行结果:" + future.get());
                 }
@@ -369,14 +380,14 @@ public class RedisCacheOperatorTest {
     private void sleep(int second) {
         try {
             TimeUnit.SECONDS.sleep(second);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
     }
 
     private void sleep(long mill) {
         try {
             TimeUnit.MILLISECONDS.sleep(mill);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
     }
 }

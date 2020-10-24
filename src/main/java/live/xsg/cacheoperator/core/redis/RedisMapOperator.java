@@ -16,7 +16,6 @@ import live.xsg.cacheoperator.utils.MapUtils;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 /**
  * map类型操作实现
@@ -61,31 +60,27 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
     }
 
     @Override
-    public Future<String> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
+    public Future<Map<String, String>> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster) {
         Map<String, String> decodeMap = this.getDecodeData(key, field);
 
         if (Constants.EMPTY_MAP.equals(decodeMap) || decodeMap == null) {
             //缓存数据已经过期
-            this.hgetAllAsync(key, expire, fluster);
-
-            return null;
+            return this.hgetAllAsync(key, expire, fluster);
         }
 
-        return new FutureAdapter<>(decodeMap.get(field));
+        return FutureAdapter.runAndGetFuture(decodeMap);
     }
 
     @Override
-    public Future<String> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
+    public Future<Map<String, String>> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService) {
         Map<String, String> decodeMap = this.getDecodeData(key, field);
 
         if (Constants.EMPTY_MAP.equals(decodeMap) || decodeMap == null) {
             //缓存数据已经过期
-            this.hgetAllAsync(key, expire, fluster, executorService);
-
-            return null;
+            return this.hgetAllAsync(key, expire, fluster, executorService);
         }
 
-        return new FutureAdapter<>(decodeMap.get(field));
+        return FutureAdapter.runAndGetFuture(decodeMap);
     }
 
     private FutureAdapter<Map<String, String>> hgetAll(String key,
@@ -100,7 +95,7 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
 
         if (invalid) {
             //缓存过期获取缓存中无数据，刷新缓存
-            resMap = cacheExecutor.executor(() -> this.fillCache(new FillCache<Map<String, String>>() {
+            return (FutureAdapter<Map<String, String>>) cacheExecutor.executor(() -> this.fillCache(new FillCache<Map<String, String>>() {
                 @Override
                 public String getKey() {
                     return key;
@@ -127,10 +122,8 @@ public class RedisMapOperator extends AbstractRedisOperator implements MapOperat
             }));
         } else {
             //缓存中存在数据且未过期
-            resMap = mapData.getData();
+            return FutureAdapter.runAndGetFuture(mapData.getData());
         }
-
-        return resMap;
     }
 
     @Override

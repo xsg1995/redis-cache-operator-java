@@ -55,9 +55,9 @@ public class RedisSetOperator extends AbstractRedisOperator implements SetOperat
                                          Refresher<Set<String>> flusher,
                                          CacheExecutor<Set<String>> cacheExecutor) {
         Set<String> smembers = this.transporter.smembers(key);
-        if (!CollectionUtils.isEmpty(smembers)) return new FutureAdapter<>(smembers);
+        if (!CollectionUtils.isEmpty(smembers)) return FutureAdapter.runAndGetFuture(smembers);
 
-        smembers = cacheExecutor.executor(() -> this.fillCache(new FillCache<Set<String>>() {
+        return (FutureAdapter<Set<String>>) cacheExecutor.executor(() -> this.fillCache(new FillCache<Set<String>>() {
             @Override
             public String getKey() {
                 return key;
@@ -82,7 +82,5 @@ public class RedisSetOperator extends AbstractRedisOperator implements SetOperat
                 return data;
             }
         }));
-
-        return smembers;
     }
 }

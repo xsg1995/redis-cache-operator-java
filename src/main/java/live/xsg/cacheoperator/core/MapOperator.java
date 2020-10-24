@@ -78,7 +78,7 @@ public interface MapOperator {
      * @param fluster 当缓存不存在或者缓存过期时，刷新缓存数据的接口
      * @return 调用 future.get() 获取返回结果
      */
-    Future<String> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster);
+    Future<Map<String, String>> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster);
 
     /**
      * map类型
@@ -93,5 +93,5 @@ public interface MapOperator {
      * @param executorService 指定线程池实现
      * @return 调用 future.get() 获取返回结果
      */
-    Future<String> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService);
+    Future<Map<String, String>> hgetAsync(String key, String field, long expire, Refresher<Map<String, String>> fluster, ExecutorService executorService);
 }

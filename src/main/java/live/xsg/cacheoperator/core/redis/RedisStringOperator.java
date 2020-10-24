@@ -14,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 /**
  * string类型操作实现
@@ -60,7 +59,7 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
 
         if (invalid) {
             //缓存过期，则重新刷新缓存
-            res = cacheExecutor.executor(() -> this.fillCache(new FillCache<String>() {
+            return (FutureAdapter<String>) cacheExecutor.executor(() -> this.fillCache(new FillCache<String>() {
 
                 @Override
                 public String getKey() {
@@ -88,10 +87,9 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
 
         } else {
             //缓存中存在数据且未过期
-            res = stringData.getData();
+            return FutureAdapter.runAndGetFuture(stringData.getData());
         }
 
-        return res;
     }
 
     @Override
