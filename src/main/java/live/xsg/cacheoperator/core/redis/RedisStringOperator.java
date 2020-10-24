@@ -1,7 +1,8 @@
-package live.xsg.cacheoperator.core;
+package live.xsg.cacheoperator.core.redis;
 
 import live.xsg.cacheoperator.codec.CodecEnum;
 import live.xsg.cacheoperator.codec.data.StringData;
+import live.xsg.cacheoperator.core.StringOperator;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.FutureAdapter;
@@ -59,47 +60,38 @@ public class RedisStringOperator extends AbstractRedisOperator implements String
 
         if (invalid) {
             //缓存过期，则重新刷新缓存
-            return (FutureAdapter<String>) cacheExecutor.executor(() -> this.doFillStringCache(key, expire, flusher));
+            res = cacheExecutor.executor(() -> this.fillCache(new FillCache<String>() {
+
+                @Override
+                public String getKey() {
+                    return key;
+                }
+
+                @Override
+                public String getIgnoreValidData() {
+                    return (String) blockIfNeed(this.getKey());
+                }
+
+                @Override
+                public String getCacheData() {
+                    //执行具体的获取缓存数据逻辑
+                    String data = flusher.refresh();
+                    //对过期时间进行延长
+                    long newExpire = getExtendExpire(expire);
+                    //对数据进行编码操作
+                    String encode = (String) getEncodeData(expire, data, CodecEnum.STRING);
+                    //填充缓存
+                    transporter.set(this.getKey(), newExpire, encode);
+                    return data;
+                }
+            }));
+
         } else {
             //缓存中存在数据且未过期
-            return new FutureAdapter<>(stringData.getData());
+            res = stringData.getData();
         }
-    }
 
-    /**
-     * 执行 Refresher 获取数据，并将数据填充到缓存中
-     *
-     * @param key     key
-     * @param expire  缓存过期时间
-     * @param flusher 获取缓存数据
-     * @return 返回最新数据
-     */
-    protected String doFillStringCache(String key, long expire, Refresher<String> flusher) {
-        boolean lock = false;
-        try {
-            //获取锁
-            lock = this.tryLock(key);
-            if (!lock) {
-                //没有获取到锁，走阻塞降级策略
-                return (String) this.blockIfNeed(key);
-            }
-
-            //执行具体的获取缓存数据逻辑
-            String data = flusher.refresh();
-            //对过期时间进行延长
-            long newExpire = this.getExtendExpire(expire);
-            //对数据进行编码操作
-            String encode = (String) this.getEncodeData(expire, data, CodecEnum.STRING);
-            //填充缓存
-            this.transporter.set(key, newExpire, encode);
-
-            return data;
-        } finally {
-            if (lock) {
-                //释放锁
-                this.unlock(key);
-            }
-        }
+        return res;
     }
 
     @Override

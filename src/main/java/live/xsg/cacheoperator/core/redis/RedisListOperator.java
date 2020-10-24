@@ -1,6 +1,7 @@
-package live.xsg.cacheoperator.core;
+package live.xsg.cacheoperator.core.redis;
 
 import live.xsg.cacheoperator.common.Constants;
+import live.xsg.cacheoperator.core.ListOperator;
 import live.xsg.cacheoperator.executor.AsyncCacheExecutor;
 import live.xsg.cacheoperator.executor.CacheExecutor;
 import live.xsg.cacheoperator.executor.FutureAdapter;
@@ -112,52 +113,43 @@ public class RedisListOperator extends AbstractRedisOperator implements ListOper
         if (!CollectionUtils.isEmpty(res)) return new FutureAdapter<>(res);
 
         //缓存过期获取缓存中无数据，刷新缓存
-        return (FutureAdapter<List<String>>) cacheExecutor.executor(() -> this.doFillListCache(key, start, end, expire, flusher));
-    }
+        res = cacheExecutor.executor(() -> this.fillCache(new FillCache<List<String>>() {
+            @Override
+            public String getKey() {
+                return key;
+            }
 
-    /**
-     * 获取list数据，插入到缓存中
-     * @param key key
-     * @param expire 缓存过期时间
-     * @param flusher 获取数据接口
-     * @return 缓存中的数据
-     */
-    @SuppressWarnings("unchecked")
-    private List<String> doFillListCache(String key, long start, long end, long expire, Refresher<List<String>> flusher) {
-        boolean lock = false;
-        try {
-            //获取锁
-            lock = this.tryLock(key);
-            if (!lock) {
-                //没有获取到锁，走阻塞降级策略
-                List<String> list = (List<String>) this.blockIfNeed(key);
+            @SuppressWarnings("unchecked")
+            @Override
+            public List<String> getIgnoreValidData() {
+                List<String> list = (List<String>) blockIfNeed(key);
                 if (CollectionUtils.isEmpty(list) && list == Constants.EMPTY_LIST) {
-                    return this.transporter.lrange(key, start, end);
+                    return transporter.lrange(key, start, end);
                 }
                 return list;
             }
 
-            //执行具体的获取缓存数据逻辑
-            List<String> data = flusher.refresh();
-            if (data == null) {
-                data = new ArrayList<>();
+            @Override
+            public List<String> getCacheData() {
+                //执行具体的获取缓存数据逻辑
+                List<String> data = flusher.refresh();
+                if (data == null) {
+                    data = new ArrayList<>();
+                }
+                //将data封装为数组
+                String[] strings = new String[data.size()];
+                int len = data.size() - 1;
+                for (int i = data.size() - 1; i >= 0; i--) {
+                    strings[len - i] = data.get(i);
+                }
+                //对过期时间进行延长
+                long newExpire = getExtendExpire(expire);
+                //填充缓存
+                transporter.lpush(key, newExpire, strings);
+                return data;
             }
-            //将data封装为数组
-            String[] strings = new String[data.size()];
-            int len = data.size() - 1;
-            for (int i = data.size() - 1; i >= 0; i--) {
-                strings[len - i] = data.get(i);
-            }
-            //对过期时间进行延长
-            long newExpire = this.getExtendExpire(expire);
-            //填充缓存
-            this.transporter.lpush(key, newExpire, strings);
-            return this.transporter.lrange(key, start, end);
-        } finally {
-            if (lock) {
-                //释放锁
-                this.unlock(key);
-            }
-        }
+        }));
+
+        return res;
     }
 }
